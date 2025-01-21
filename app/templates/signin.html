@@ -24,11 +24,11 @@
 </head>
 <body>
     <div class="container">
-        <h1>Login</h1>
+        <h1>SignIn</h1>
         <form action="{{ url_for('auth.signin') }}" method="POST">
             <input type="email" name="email" placeholder="Email" required>
             <input type="password" name="password" placeholder="Password" required>
-            <button type="submit">SignIn</button>
+            <button type="submit">Signin</button>
         </form>
         <p>Don't have an account? <a href="{{ url_for('auth.signup') }}">SignUp</a></p>
     </div>
