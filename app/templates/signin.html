@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <title>SignIn</title>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+                const flashMessages = JSON.parse(
+                    '{{ get_flashed_messages(with_categories=True) | tojson | safe }}'
+                );
+                flashMessages.forEach(([category, message]) => {
+                    Swal.fire({
+                        icon: category === 'success' ? 'success' : 'error',
+                        title: category.charAt(0).toUpperCase() + category.slice(1),
+                        text: message,
+                    });
+                });
+            });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Login</h1>
+        <form action="{{ url_for('auth.signin') }}" method="POST">
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">SignIn</button>
+        </form>
+        <p>Don't have an account? <a href="{{ url_for('auth.signup') }}">SignUp</a></p>
+    </div>
+</body>
+</html>

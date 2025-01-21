@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Website Blocker</title>
+    <link rel="stylesheet" href="/static/css/indexstyle.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="container">
+            <h1>Welcome to Website Blocker</h1>
+            <p>Take control of your online productivity with our powerful tools.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <!-- Overview Section -->
+        <section class="overview">
+            <div class="container">
+                <h2>What is Website Blocker?</h2>
+                <p>
+                    Website Blocker is an innovative platform designed to enhance productivity, 
+                    manage distractions, and improve focus by giving you full control over your 
+                    online experience. Explore our comprehensive suite of tools to block, categorize, 
+                    and protect your digital environment.
+                </p>
+                <a href="{{ url_for('auth.home') }}" class="try-button">Get Started Now</a>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <h2>Our Features</h2>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <h3>Website Blocking</h3>
+                        <p>Block distracting websites to stay focused and productive.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Website Unblocking</h3>
+                        <p>Easily unblock websites when you need temporary access.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Categories</h3>
+                        <p>Organize blocked websites into categories for easier management.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Favourites</h3>
+                        <p>Mark your favorite websites for quick access and easy toggling.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Password Protection</h3>
+                        <p>Secure your website blocker settings with a strong password.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Multi-Factor Authentication (MFA)</h3>
+                        <p>Enhance security with an additional layer of authentication.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Scheduling</h3>
+                        <p>Set time-based schedules to block or unblock websites automatically.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Activity Reports</h3>
+                        <p>Track your productivity with detailed reports and insights.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h3>Custom Blocking Rules</h3>
+                        <p>Create personalized blocking rules based on keywords or domains.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Section -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Website Blocker. All Rights Reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

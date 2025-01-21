@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/static/css/style.css">
+    <title>SignUp</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        let timer;
+
+        function startResendTimer(duration) {
+            const resendButton = document.getElementById('resend-btn');
+            resendButton.disabled = true;
+            let timeLeft = duration;
+            timer = setInterval(() => {
+                resendButton.textContent = `Resend OTP (${timeLeft}s)`;
+                timeLeft -= 1;
+                if (timeLeft < 0) {
+                    clearInterval(timer);
+                    resendButton.disabled = false;
+                    resendButton.textContent = 'Resend OTP';
+                }
+            }, 1000);
+        }
+
+        function sendOtp() {
+            const email = document.getElementById('email').value;
+            if (!email) {
+                Swal.fire('Error', 'Please enter a valid email', 'error');
+                return;
+            }
+            fetch('/send_otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email })
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Success', data.message, 'success');
+                    document.getElementById('otp-container').style.display = 'block';
+                    document.getElementById('send-otp-btn').style.display = 'none';
+                    startResendTimer(60);
+                } else {
+                    Swal.fire('Error', data.error, 'error');
+                }
+            }).catch(error => Swal.fire('Error', `Error sending OTP: ${error}`, 'error'));
+        }
+
+        function verifyOtp() {
+            const otp = document.getElementById('otp').value;
+            if (!otp) {
+                Swal.fire('Error', 'Please enter the OTP', 'error');
+                return;
+            }
+            fetch('/verify_otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ otp })
+            }).then(response => response.json()).then(data => {
+                if (data.success) {
+                    Swal.fire('Success', data.message, 'success');
+                    document.getElementById('otp-container').style.display = 'none';
+                    document.getElementById('email').readOnly = true;
+                    document.getElementById('otp').readOnly = true;
+                    document.getElementById('verify-otp-btn').style.display = 'none';
+                } else {
+                    Swal.fire('Error', data.error, 'error');
+                }
+            }).catch(error => Swal.fire('Error', `Error verifying OTP: ${error}`, 'error'));
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+        const flashMessages = JSON.parse(
+            '{{ get_flashed_messages(with_categories=True) | tojson | safe }}'
+        );
+        flashMessages.forEach(([category, message]) => {
+            Swal.fire({
+                icon: category === 'success' ? 'success' : 'error',
+                title: category.charAt(0).toUpperCase() + category.slice(1),
+                text: message,
+            });
+        });
+    });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>SignUp Page</h1>
+        <form action="{{ url_for('auth.signup') }}" method="POST">
+            <input type="text" name="name" placeholder="Name" required>
+            <input type="email" id="email" name="email" placeholder="Email" required>
+            <button type="button" id="send-otp-btn" onclick="sendOtp()">Send OTP</button>
+
+            <div id="otp-container" style="display: none;">
+                <input type="text" id="otp" name="otp" placeholder="Enter OTP" required>
+                <button type="button" id="verify-otp-btn" onclick="verifyOtp()">Verify OTP</button>
+                <br><br>
+                <button type="button" id="resend-btn" onclick="sendOtp()">Resend OTP</button>
+            </div>
+
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+            <button type="submit">SignUp</button>
+        </form>
+        <p>Already have an account? <a href="{{ url_for('auth.signin') }}">SignIn</a></p>
+    </div>
+</body>
+</html>

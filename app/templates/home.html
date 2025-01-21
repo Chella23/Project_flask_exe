@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Website Blocker Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Flash message handling
+            const flashMessages = JSON.parse(
+                '{{ get_flashed_messages(with_categories=True) | tojson | safe }}'
+            );
+            flashMessages.forEach(([category, message]) => {
+                Swal.fire({
+                    icon: category === 'success' ? 'success' : 'error',
+                    title: category.charAt(0).toUpperCase() + category.slice(1),
+                    text: message,
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <header>
+            <div class="menu-toggle" id="menu-toggle">
+                <img src="{{ url_for('static', filename='images/menutoggle.png') }}" alt="Menu Toggle">
+          
+            </div>
+         </header>
+        <nav class="sidebar">
+            <ul class="menu">
+                <li><a href="{{ url_for('auth.success')}}" class="active">Home</a></li>
+                <li><a href="">Categories</a></li>
+                <li><a href="">Favourites</a></li>
+                <li><a href="">Multi-Factor Authentication</a></li>
+                <li><a href="">Password Protection</a></li>
+            </ul>
+        </nav>
+     
+        <!-- Main Content -->
+        <div class="main-content">
+            <header class="topic">
+                <h1>Website Blocker</h1>
+                <div>
+                    {% if session.get('user_id') %}
+                        <span class="welcome-text">Welcome, {{ session.get('user_name')}}!      </span>
+                        <a href="{{ url_for('auth.logout') }}" class="logout">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
+                        <a href="{{ url_for('auth.signup') }}" class="signup">Sign Up</a>
+                    {% endif %}
+                </div>
+            </header>
+            <section id="content">
+                <form id="block-website-form">
+                    <label for="website-url">Enter Website URL:</label>
+                    <input type="text" id="website-url" placeholder="e.g., www.example.com">
+                    <button type="button" id="block-btn">Block</button>
+                </form>
+                <div id="blocked-websites">
+                    <h2>Blocked Websites:</h2>
+                    <ul id="blocked-list">
+                        <!-- Dynamically populated -->
+                    </ul>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <!-- Include JavaScript -->
+    <script src="/static/js/app.js?v=2"></script>
+</body>
+</html>
