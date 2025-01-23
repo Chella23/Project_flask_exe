@@ -9,6 +9,7 @@ from flask import (
     session,
 )
 from flask_mail import Message, Mail
+from app.utils.site_blocker import block_website, unblock_website
 from . import db, mail
 from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
@@ -144,3 +145,25 @@ def verify_otp():
         return jsonify({"success": True, "message": Constants.OTP_VERIFIED})
 
     return jsonify({"error": Constants.INCORRECT_EXPIRED_OTP}), 400
+
+@auth_bp.route('/block', methods=['POST'])
+def block_site():
+    data = request.json
+    website_url = data.get("website_url")
+
+    if not website_url:
+        return jsonify({"success": False, "message": "Invalid website URL"})
+
+    success = block_website(website_url)
+    return jsonify({"success": success, "action": "block", "website_url": website_url})
+
+@auth_bp.route('/unblock', methods=['POST'])
+def unblock_site():
+    data = request.json
+    website_url = data.get("website_url")
+
+    if not website_url:
+        return jsonify({"success": False, "message": "Invalid website URL"})
+
+    success = unblock_website(website_url)
+    return jsonify({"success": success, "action": "unblock", "website_url": website_url})
