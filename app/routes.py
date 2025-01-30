@@ -146,7 +146,7 @@ def verify_otp():
 
     return jsonify({"error": Constants.INCORRECT_EXPIRED_OTP}), 400
 
-@auth_bp.route('/block', methods=['POST'])
+@auth_bp.route('/block', methods=[Methods.GET, Methods.POST])
 def block_site():
     data = request.json
     website_url = data.get("website_url")
@@ -157,7 +157,7 @@ def block_site():
     success = block_website(website_url)
     return jsonify({"success": success, "action": "block", "website_url": website_url})
 
-@auth_bp.route('/unblock', methods=['POST'])
+@auth_bp.route('/unblock',methods=[Methods.GET, Methods.POST])
 def unblock_site():
     data = request.json
     website_url = data.get("website_url")
