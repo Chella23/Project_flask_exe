@@ -1,9 +1,25 @@
 import ctypes
+import json
 import os
 import platform
 import sys
 import webview
+from webview.platforms.edgechromium import EdgeChrome  # Use EdgeChrome instead of EdgeChromium
 from app import create_app
+
+# Custom EdgeChrome class to handle on_script_notify safely
+class CustomEdgeChrome(EdgeChrome):
+    def on_script_notify(self, func_param):
+        if func_param is None:
+            print("⚠️ Ignoring NoneType in on_script_notify")
+            return
+        try:
+            super().on_script_notify(func_param)  # Call the original handler with valid data
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON parsing failed: {e}")
+        except Exception as e:
+            print(f"❌ Unexpected error: {e}")
+
 
 def ensure_admin_privileges():
     """
@@ -27,16 +43,25 @@ def ensure_admin_privileges():
             print("This script requires admin privileges. Please run it with 'sudo'.")
             sys.exit(1)
 
+
 if __name__ == "__main__":
     app = create_app()
     ensure_admin_privileges()
 
-    # Run the Flask app in the background
+    # Run Flask in the background
     from threading import Thread
     server_thread = Thread(target=app.run, kwargs={"port": 5000, "debug": False})
     server_thread.daemon = True
     server_thread.start()
 
-    # Create PyWebView GUI
-    webview.create_window("User Management App", "http://127.0.0.1:5000")
+    # Replace the default EdgeChrome class with the custom one
+    webview.platforms.edgechromium.EdgeChrome = CustomEdgeChrome
+
+    webview.create_window(
+        "User Management App",
+        "http://127.0.0.1:5000",
+        js_api={},  # Remove on_script_notify from here
+    )
+
+
     webview.start()

@@ -8,6 +8,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+import json
 
 
 def terminate_chrome_processes():
@@ -154,6 +155,24 @@ def modify_hosts_file(action, website_url):
     except Exception as e:
         print(f"❌ Error modifying hosts file: {e}")
         return False
+
+
+
+def on_script_notify(func_param):
+    """ Handles script notifications and ensures JSON parsing is safe. """
+    try:
+        if func_param is None:
+            print("⚠️ Received NoneType in on_script_notify. Skipping JSON parsing.")
+            return  # Prevents the error
+
+        func_param = json.loads(func_param)  # Safely parse JSON
+        print("✅ Successfully parsed JSON:", func_param)
+
+    except json.JSONDecodeError:
+        print("❌ JSON parsing error. Invalid format:", func_param)
+    except Exception as e:
+        print(f"❌ Unexpected error in on_script_notify: {e}")
+
 
 
 def block_website(website_url):
