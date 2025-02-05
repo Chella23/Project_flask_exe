@@ -295,3 +295,206 @@ a:active {
     transform: scale(1.05);
     box-shadow: 0 5px 15px rgba(231, 76, 60, 0.5);
 }
+
+.logout {
+    margin-left: 20px; /* Adjust spacing as needed */
+}
+/* Search Bar */
+.search-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+#search-input {
+    flex: 1;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: white;
+    font-size: 16px;
+    outline: none;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+#search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+#search-input:focus {
+    border-color: #6a11cb;
+    box-shadow: 0 0 8px rgba(106, 17, 203, 0.5);
+}
+
+#search-btn {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+}
+
+#search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+}
+
+/* Default and Custom Categories */
+#default-categories, #custom-categories {
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+  }
+  
+  .category {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 10px;
+    transition: all 0.3s ease-in-out;
+    cursor: pointer;
+  }
+  
+  .category h3 {
+    font-size: 1.3rem;
+    color: white;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+  }
+  
+  .category ul {
+    list-style: none;
+    padding: 0;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out;
+  }
+  
+  .category.expanded ul {
+    max-height: 500px;
+  }
+  
+  .add-icon {
+    cursor: pointer;
+    padding: 5px;
+    border: 1px solid #4CAF50;
+    border-radius: 50%;
+    font-weight: bold;
+    color: #4CAF50;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .add-icon:hover {
+    background-color: #4CAF50;
+    color: white;
+  }
+  
+
+/* Plus Icon for Adding Websites */
+.add-icon {
+    cursor: pointer;
+    padding: 5px;
+    border: 1px solid #4CAF50;
+    border-radius: 50%;
+    font-weight: bold;
+    color: #4CAF50;
+    transition: all 0.3s ease-in-out;
+}
+
+.add-icon:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #default-categories,
+    #custom-categories {
+        padding: 10px;
+    }
+    
+    .category h3 {
+        font-size: 1.1rem;
+    }
+    
+    .category li {
+        font-size: 0.9rem;
+    }
+}
+
+
+/* Plus Icon for Adding Websites */
+.add-icon {
+    cursor: pointer;
+    margin-left: 10px;
+    padding: 2px 8px;
+    border: 1px solid #4CAF50;
+    border-radius: 50%;
+    font-weight: bold;
+    color: #4CAF50;
+    transition: all 0.3s ease;
+}
+
+.add-icon:hover {
+    background-color: #4CAF50;
+    color: white;
+}
+
+/* Blocked Websites Container */
+#blocked-websites {
+    margin-top: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  /* Blocked Websites Heading */
+  #blocked-websites h2 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 15px;
+  }
+  
+  /* Blocked Websites List */
+  #blocked-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  /* List Items */
+  #blocked-list li {
+    padding: 10px 15px;
+    margin-bottom: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #fff;
+    font-size: 16px;
+  }
+  
+  /* Unblock Button within List Items */
+  #blocked-list li button {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  
+  #blocked-list li button:hover {
+    background: linear-gradient(135deg, #c0392b, #e74c3c);
+  }
+  
+

@@ -35,7 +35,7 @@
         <nav class="sidebar">
             <ul class="menu">
                 <li><a href="{{ url_for('auth.success')}}" class="active">Home</a></li>
-                <li><a href="">Categories</a></li>
+                <li><a href="{{ url_for('auth.categories')}}">Categories</a></li>
                 <li><a href="">Favourites</a></li>
                 <li><a href="">Multi-Factor Authentication</a></li>
                 <li><a href="">Password Protection</a></li>
@@ -48,7 +48,8 @@
                 <h1>Website Blocker</h1>
                 <div>
                     {% if session.get('user_id') %}
-                        <span class="welcome-text">Welcome, {{ session.get('user_name')}}!      </span>
+                        <span class="welcome-text">Welcome, {{ session.get('user_name')}}!</span>
+                        
                         <a href="{{ url_for('auth.logout') }}" class="logout">Logout</a>
                     {% else %}
                         <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
@@ -59,7 +60,7 @@
             <section id="content">
                 <form id="block-website-form">
                     <label for="website-url">Enter Website URL:</label>
-                    <input type="text" id="website-url" placeholder="e.g., www.example.com">
+                    <textarea type="text" id="website-url" placeholder="e.g., www.example.com"></textarea>
                     <div class="button-group">
                         <button type="button" id="block-btn">Block</button>
                         <button type="button" id="unblock-btn">Unblock</button>

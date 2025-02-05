@@ -15,16 +15,12 @@ from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
+from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite
+from sqlalchemy.orm import joinedload
 
 
 auth_bp = Blueprint("auth", __name__)
 
-# User Model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
-    password = db.Column(db.String(100), nullable=False)
 
 
 
@@ -167,3 +163,74 @@ def unblock_site():
 
     success = unblock_website(website_url)
     return jsonify({"success": success, "action": "unblock", "website_url": website_url})
+
+@auth_bp.route('/categories')
+def categories():
+    user_id = session.get('user_id')
+
+    # Fetch default categories
+    default_categories = DefaultCategory.query.options(joinedload(DefaultCategory.websites)).all()
+
+    # Fetch custom categories (only for logged-in users)
+    user_custom_categories = []
+    if user_id:
+        user_custom_categories = CustomCategory.query.filter_by(user_id=user_id).options(joinedload(CustomCategory.websites)).all()
+
+    return render_template("categories.html", 
+                           default_categories=default_categories, 
+                           user_custom_categories=user_custom_categories)
+
+
+@auth_bp.route('/add_custom_category', methods=[Methods.GET, Methods.POST])
+def add_custom_category():
+    if not session.get('user_id'):
+        flash("Please log in to add custom categories.", "error")
+        return redirect(url_for('auth.signin'))
+    
+    title = request.form.get('category_title')
+    websites_str = request.form.get('category_websites')  # e.g., "example.com, another.com"
+
+    if not title or not websites_str:
+        flash("Please provide both a title and at least one website URL.", "error")
+        return redirect(url_for('auth.categories'))
+    
+    # Check if category with same title exists for the user
+    existing_category = CustomCategory.query.filter_by(user_id=session.get('user_id'), title=title).first()
+    if existing_category:
+        flash("A category with this title already exists.", "error")
+        return redirect(url_for('auth.categories'))
+    
+    # Create and save the custom category
+    custom_category = CustomCategory(
+        user_id=session.get('user_id'),
+        title=title
+    )
+    db.session.add(custom_category)
+    db.session.flush()  # Assign ID before adding websites
+
+    # Process each website URL – split by commas and add both versions.
+    websites_list = [url.strip() for url in websites_str.split(",") if url.strip()]
+    
+    for base_url in websites_list:
+        if not base_url.startswith("http"):
+            base_url = base_url  # Ensure URLs are stored correctly
+            
+        website1 = CustomWebsite(
+            category_id=custom_category.id,
+            name=base_url,
+            url=base_url
+        )
+
+        website2 = CustomWebsite(
+            category_id=custom_category.id,
+            name=f"{base_url} (www)",
+            url=f"www.{base_url}" if not base_url.startswith("www.") else base_url
+        )
+
+        db.session.add(website1)
+        db.session.add(website2)
+
+    db.session.commit()
+
+    flash("Custom category added successfully!", "success")
+    return redirect(url_for('auth.categories'))

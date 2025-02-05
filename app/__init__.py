@@ -1,8 +1,9 @@
+# app/__init__.py
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_mail import Mail
 
-# Initialize database and mail objects
+# Create the single instances
 db = SQLAlchemy()
 mail = Mail()
 
@@ -19,20 +20,22 @@ def create_app():
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
     app.config['MAIL_USE_SSL'] = False
-    app.config['MAIL_USERNAME'] = 'chellaamap@gmail.com'  # Replace with your email
-    app.config['MAIL_PASSWORD'] = 'ybsw tumb ffta lvqk'  # Replace with your email password
+    app.config['MAIL_USERNAME'] = 'chellaamap@gmail.com'
+    app.config['MAIL_PASSWORD'] = 'ybsw tumb ffta lvqk'
     app.config['MAIL_DEFAULT_SENDER'] = 'chellaamap@gmail.com'
 
-    # Initialize extensions
+    # Initialize extensions with the app
     db.init_app(app)
     mail.init_app(app)
 
-    # Import and register Blueprints
+    # Register Blueprints
     from .routes import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/')
 
-    # Create database tables
+    # Create tables and seed default categories within an app context.
     with app.app_context():
         db.create_all()
+        from .seeds import init_default_categories
+        init_default_categories()
 
     return app

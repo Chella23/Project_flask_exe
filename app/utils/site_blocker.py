@@ -126,52 +126,65 @@ def clear_browser_cache():
         print(f"❌ Error clearing browser cache: {e}")
 
 
-def modify_hosts_file(action, website_url):
+import platform
+
+def modify_hosts_file(action, websites_text):
     """
-    Adds or removes a website from the hosts file.
+    Modifies the hosts file to block or unblock websites.
+    
+    Parameters:
+        action (str): Either "block" or "unblock".
+        websites_text (str): A string containing one or more website URLs, 
+                             separated by newlines.
     """
     hosts_path = r'C:\Windows\System32\drivers\etc\hosts' if platform.system() == "Windows" else '/etc/hosts'
     redirect_ip = '127.0.0.1'
-    entry = f"{redirect_ip} {website_url}\n"
 
+    # Extract non-empty, stripped website URLs from the input text.
+    websites = [line.strip() for line in websites_text.splitlines() if line.strip()]
+    
     try:
         with open(hosts_path, 'r+') as file:
+            # Read the existing lines from the hosts file.
             lines = file.readlines()
             file.seek(0)
-
+            
             if action == "block":
-                if entry not in lines:
-                    file.writelines(lines + [entry])
+                # Create a set of current entries (stripped) to avoid duplicates.
+                existing_entries = {line.strip() for line in lines}
+                # For each website, create the entry and add it if not already present.
+                for website in websites:
+                    entry = f"{redirect_ip} {website}"
+                    if entry not in existing_entries:
+                        lines.append(entry + "\n")
+            
             elif action == "unblock":
-                file.writelines(line for line in lines if line.strip() != entry.strip())
+                # Filter out only the entries corresponding to the websites provided.
+                def is_unblock_entry(line):
+                    stripped = line.strip()
+                    # If the line exactly matches the entry for any of the provided websites, remove it.
+                    for website in websites:
+                        if stripped == f"{redirect_ip} {website}":
+                            return False
+                    return True
 
+                lines = [line for line in lines if is_unblock_entry(line)]
+            
+            # Write back the modified lines to the hosts file.
+            file.writelines(lines)
             file.truncate()
 
-        print(f"✅ Hosts file updated successfully for {website_url}.")
+        print(f"✅ Hosts file updated successfully for the provided websites.")
         return True
+
     except PermissionError:
         print(f"❌ Permission error: Run this script as administrator to modify {hosts_path}.")
         return False
+
     except Exception as e:
         print(f"❌ Error modifying hosts file: {e}")
         return False
 
-
-
-def on_script_notify(func_param):
-    """ Handles script notifications and ensures JSON parsing is safe. """
-    try:
-        if func_param is None:
-            print("⚠️ Received NoneType in on_script_notify. Skipping JSON parsing.")
-            return  # Prevents the error
-
-        func_param = json.loads(func_param)  # Safely parse JSON
-        print("✅ Successfully parsed JSON:", func_param)
-
-    except json.JSONDecodeError:
-        print("❌ JSON parsing error. Invalid format:", func_param)
-    except Exception as e:
-        print(f"❌ Unexpected error in on_script_notify: {e}")
 
 
 
@@ -186,6 +199,7 @@ def block_website(website_url):
     #clear_chrome_dns_cache()
 
     if success_hosts:
+       
         print(f"✅ Website {website_url} has been successfully blocked.")
         return True
     else:
@@ -204,6 +218,7 @@ def unblock_website(website_url):
     #clear_chrome_dns_cache()
 
     if success_hosts:
+
         print(f"✅ Website {website_url} has been successfully unblocked.")
         return True
     else:

@@ -1,1 +1,5 @@
 pip install Flask-Mail
+
+
+to convert to exe
+pyinstaller --noconsole --onefile --windowed --add-data "app/templates;app/templates" --add-data "app/static;app/static" main.py

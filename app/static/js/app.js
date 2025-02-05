@@ -60,3 +60,50 @@ document.getElementById('unblock-btn').addEventListener('click', async () => {
         alert('An error occurred. Please try again.');
     }
 });
+
+
+// Expand/Collapse Categories
+document.addEventListener("DOMContentLoaded", function () {
+    const categoryHeadings = document.querySelectorAll(".category h3");
+    categoryHeadings.forEach(heading => {
+        heading.addEventListener("click", function () {
+            this.parentElement.classList.toggle("expanded");
+        });
+    });
+});
+
+// Search Functionality
+document.getElementById("search-btn").addEventListener("click", function () {
+    const searchQuery = document.getElementById("search-input").value.toLowerCase();
+    const categories = document.querySelectorAll(".category");
+
+    categories.forEach(category => {
+        const categoryName = category.querySelector("h3 span").textContent.toLowerCase();
+        const websites = category.querySelectorAll("li");
+
+        let matchFound = false;
+
+        // Check if category name matches
+        if (categoryName.includes(searchQuery)) {
+            matchFound = true;
+        }
+
+        // Check if any website name matches
+        websites.forEach(website => {
+            const websiteName = website.textContent.toLowerCase();
+            if (websiteName.includes(searchQuery)) {
+                matchFound = true;
+                website.style.backgroundColor = "rgba(106, 17, 203, 0.2)"; // Highlight matching websites
+            } else {
+                website.style.backgroundColor = ""; // Reset background for non-matching websites
+            }
+        });
+
+        // Show/hide categories based on search results
+        if (matchFound) {
+            category.style.display = "block";
+        } else {
+            category.style.display = "none";
+        }
+    });
+});

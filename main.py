@@ -3,9 +3,12 @@ import json
 import os
 import platform
 import sys
+from flask import Flask
 import webview
 from webview.platforms.edgechromium import EdgeChrome  # Use EdgeChrome instead of EdgeChromium
 from app import create_app
+from app.seeds import init_default_categories
+from threading import Thread
 
 # Custom EdgeChrome class to handle on_script_notify safely
 class CustomEdgeChrome(EdgeChrome):
@@ -43,13 +46,27 @@ def ensure_admin_privileges():
             print("This script requires admin privileges. Please run it with 'sudo'.")
             sys.exit(1)
 
+# Detect if running as an EXE
+if getattr(sys, 'frozen', False):
+    BASE_DIR = sys._MEIPASS  # PyInstaller sets this for temp files
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+)
 
 if __name__ == "__main__":
     app = create_app()
     ensure_admin_privileges()
 
+    # Ensure the app context is pushed before calling init_default_categories
+    with app.app_context():
+        init_default_categories()
+
     # Run Flask in the background
-    from threading import Thread
     server_thread = Thread(target=app.run, kwargs={"port": 5000, "debug": False})
     server_thread.daemon = True
     server_thread.start()
@@ -62,6 +79,5 @@ if __name__ == "__main__":
         "http://127.0.0.1:5000",
         js_api={},  # Remove on_script_notify from here
     )
-
 
     webview.start()
