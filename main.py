@@ -9,6 +9,8 @@ from webview.platforms.edgechromium import EdgeChrome  # Use EdgeChrome instead 
 from app import create_app
 from app.seeds import init_default_categories
 from threading import Thread
+from app.seeds import check_and_initialize
+
 
 # Custom EdgeChrome class to handle on_script_notify safely
 class CustomEdgeChrome(EdgeChrome):
@@ -65,7 +67,7 @@ if __name__ == "__main__":
     # Ensure the app context is pushed before calling init_default_categories
     with app.app_context():
         init_default_categories()
-
+        check_and_initialize()
     # Run Flask in the background
     server_thread = Thread(target=app.run, kwargs={"port": 5000, "debug": False})
     server_thread.daemon = True

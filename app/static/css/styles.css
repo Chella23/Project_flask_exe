@@ -296,7 +296,7 @@ a:active {
     box-shadow: 0 5px 15px rgba(231, 76, 60, 0.5);
 }
 
-.logout {
+.signout {
     margin-left: 20px; /* Adjust spacing as needed */
 }
 /* Search Bar */
@@ -349,36 +349,60 @@ a:active {
     padding: 15px;
     background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-  }
-  
-  .category {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Two columns */
+    gap: 1.5rem; /* Spacing between columns */
+}
+
+.category {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 1rem;
-    margin-bottom: 10px;
-    transition: all 0.3s ease-in-out;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.category h3 {
     cursor: pointer;
-  }
-  
-  .category h3 {
-    font-size: 1.3rem;
-    color: white;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.2);
+    display: grid;
+    grid-template-columns: 1fr auto; /* Title + emoji on left, toggle icon on right */
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    font-size: 1.2rem;
+    margin: 0;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 6px;
-  }
-  
-  .category ul {
+}
+
+/* Toggle Icon */
+.category h3::after {
+    content: '+';
+    font-size: 1.4rem;
+    font-weight: bold;
+    justify-self: end;
+}
+
+/* Only the clicked category expands */
+.category.expanded h3::after {
+    content: '−';
+}
+
+.category ul {
     list-style: none;
+    margin: 0;
     padding: 0;
     max-height: 0;
     overflow: hidden;
-    transition: max-height 0.3s ease-in-out;
-  }
-  
-  .category.expanded ul {
-    max-height: 500px;
-  }
+    transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+.category.expanded ul {
+    max-height: 500px; /* Adjust based on content */
+    padding: 0.8rem 0;
+}
+
   
   .add-icon {
     cursor: pointer;

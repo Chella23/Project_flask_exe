@@ -63,7 +63,7 @@
         <div>
           {% if session.get('user_id') %}
             <span class="welcome-text">Welcome, {{ session.get('user_name') }}!</span>
-            <a href="{{ url_for('auth.logout') }}" class="logout">Logout</a>
+            <a href="{{ url_for('auth.signout') }}" class="signout">Sign Out</a>
           {% else %}
             <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
             <a href="{{ url_for('auth.signup') }}" class="signup">Sign Up</a>
@@ -92,6 +92,7 @@
    <!-- Default Categories Section -->
    <section id="default-categories">
     <h2>Default Website Categories</h2>
+   </br>
     {% if default_categories %}
       {% for category in default_categories %}
         <div class="category">
@@ -151,5 +152,6 @@
 </div>
 </div>
   <script src="{{ url_for('static', filename='js/app.js') }}?v=2"></script>
+  <script src="/static/js/script.js?v=2"></script>
 </body>
 </html>

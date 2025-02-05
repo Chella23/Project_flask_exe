@@ -19,7 +19,7 @@ class Constants:
     INVALID_EMAIL_PASSWORD = "Invalid email or password!"
     PASSWORDS_MISMATCH = "Passwords do not match!"
     EMAIL_ALREADY_REGISTERED = "Email already registered!"
-    LOGOUT_SUCCESS = "You have been logged out successfully!"
+    SIGNOUT_SUCCESS = "You have been logged out successfully!"
     EMAIL_REQUIRED = "Email is required"
     INVALID_EXPIRED_OTP = "Invalid or expired OTP"
     OTP_VERIFIED = "OTP verified."
@@ -32,8 +32,8 @@ class Constants:
 
     """Responses to frontend"""
     SIGNUP_MESSAGE = "Signup successful! Please login."
-    signin_SUCCESS = "Signin successful!"
-    LOGIN_SUCCESS = "Login successful!"
+    SIGNIN_SUCCESS = "Signin successful!"
+
     SUCCESS = "success"
     
     """Email"""

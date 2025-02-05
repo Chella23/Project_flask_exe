@@ -8,7 +8,7 @@ from flask import (
     flash,
     session,
 )
-from flask_mail import Message, Mail
+from flask_mail import Message
 from app.utils.site_blocker import block_website, unblock_website
 from . import db, mail
 from .constants import Constants, Methods
@@ -18,11 +18,7 @@ import time
 from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite
 from sqlalchemy.orm import joinedload
 
-
 auth_bp = Blueprint("auth", __name__)
-
-
-
 
 @auth_bp.route("/")
 def index():
@@ -36,14 +32,11 @@ def home():
             return redirect(url_for("auth.success"))
     return render_template(Constants.HOME_PAGE)
 
-
 @auth_bp.route("/signin", methods=[Methods.GET, Methods.POST])
 def signin():
     if request.method == Methods.GET:
-        # Render the signin page
         return render_template(Constants.SIGNIN_PAGE)
 
-    # Handle POST request for signin
     email = request.form.get("email")
     password = request.form.get("password")
     user = User.query.filter_by(email=email).first()
@@ -51,13 +44,11 @@ def signin():
     if user and checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
         session["user_id"] = user.id
         session["user_name"] = user.name
-        flash(Constants.signin_SUCCESS, Constants.SUCCESS)
+        flash(Constants.SIGNIN_SUCCESS, "success")
         return redirect(url_for("auth.success"))
 
-    flash(Constants.INVALID_EMAIL_PASSWORD, Constants.ERROR)
+    flash(Constants.INVALID_EMAIL_PASSWORD, "error")
     return redirect(url_for("auth.signin"))
-
-
 
 @auth_bp.route("/signup", methods=[Methods.GET, Methods.POST])
 def signup():
@@ -68,11 +59,11 @@ def signup():
         confirm_password = request.form.get("confirm_password")
 
         if password != confirm_password:
-            flash(Constants.PASSWORDS_MISMATCH, Constants.ERROR)
+            flash(Constants.PASSWORDS_MISMATCH, "error")
             return redirect(url_for("auth.signup"))
 
         if User.query.filter_by(email=email).first():
-            flash(Constants.EMAIL_ALREADY_REGISTERED, Constants.ERROR)
+            flash(Constants.EMAIL_ALREADY_REGISTERED, "error")
             return redirect(url_for("auth.signup"))
 
         hashed_password = hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
@@ -80,11 +71,10 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
 
-        flash(Constants.SIGNUP_MESSAGE, Constants.SUCCESS)
+        flash(Constants.SIGNUP_MESSAGE, "success")
         return redirect(url_for("auth.home"))
 
     return render_template(Constants.SIGNUP_PAGE)
-
 
 @auth_bp.route("/success")
 def success():
@@ -93,13 +83,11 @@ def success():
         return render_template(Constants.HOME_PAGE, name=user_name)
     return redirect(url_for("auth.signin"))
 
-
-@auth_bp.route("/logout")
-def logout():
+@auth_bp.route("/signout")
+def signout():
     session.clear()
-    flash(Constants.LOGOUT_SUCCESS, Constants.SUCCESS)
+    flash(Constants.SIGNOUT_SUCCESS, "success")
     return redirect(url_for("auth.home"))
-
 
 @auth_bp.route("/send_otp", methods=[Methods.POST])
 def send_otp():
@@ -111,7 +99,7 @@ def send_otp():
 
     otp = random.randint(100000, 999999)
     session["otp"] = otp
-    session["otp_expiry"] = time.time() + 300
+    session["otp_expiry"] = time.time() + 300  # OTP expires in 5 minutes
 
     try:
         msg = Message(
@@ -125,7 +113,6 @@ def send_otp():
     except Exception as e:
         print(f"Error sending email: {e}")
         return jsonify({"error": Constants.OTP_SEND_FAILURE}), 500
-
 
 @auth_bp.route("/verify_otp", methods=[Methods.POST])
 def verify_otp():
@@ -142,7 +129,7 @@ def verify_otp():
 
     return jsonify({"error": Constants.INCORRECT_EXPIRED_OTP}), 400
 
-@auth_bp.route('/block', methods=[Methods.GET, Methods.POST])
+@auth_bp.route('/block', methods=[Methods.POST])
 def block_site():
     data = request.json
     website_url = data.get("website_url")
@@ -153,7 +140,7 @@ def block_site():
     success = block_website(website_url)
     return jsonify({"success": success, "action": "block", "website_url": website_url})
 
-@auth_bp.route('/unblock',methods=[Methods.GET, Methods.POST])
+@auth_bp.route('/unblock', methods=[Methods.POST])
 def unblock_site():
     data = request.json
     website_url = data.get("website_url")
@@ -168,11 +155,9 @@ def unblock_site():
 def categories():
     user_id = session.get('user_id')
 
-    # Fetch default categories
     default_categories = DefaultCategory.query.options(joinedload(DefaultCategory.websites)).all()
-
-    # Fetch custom categories (only for logged-in users)
     user_custom_categories = []
+
     if user_id:
         user_custom_categories = CustomCategory.query.filter_by(user_id=user_id).options(joinedload(CustomCategory.websites)).all()
 
@@ -180,55 +165,33 @@ def categories():
                            default_categories=default_categories, 
                            user_custom_categories=user_custom_categories)
 
-
-@auth_bp.route('/add_custom_category', methods=[Methods.GET, Methods.POST])
+@auth_bp.route('/add_custom_category', methods=[Methods.POST])
 def add_custom_category():
     if not session.get('user_id'):
         flash("Please log in to add custom categories.", "error")
         return redirect(url_for('auth.signin'))
     
     title = request.form.get('category_title')
-    websites_str = request.form.get('category_websites')  # e.g., "example.com, another.com"
+    websites_str = request.form.get('category_websites')
 
     if not title or not websites_str:
         flash("Please provide both a title and at least one website URL.", "error")
         return redirect(url_for('auth.categories'))
     
-    # Check if category with same title exists for the user
     existing_category = CustomCategory.query.filter_by(user_id=session.get('user_id'), title=title).first()
     if existing_category:
         flash("A category with this title already exists.", "error")
         return redirect(url_for('auth.categories'))
     
-    # Create and save the custom category
-    custom_category = CustomCategory(
-        user_id=session.get('user_id'),
-        title=title
-    )
+    custom_category = CustomCategory(user_id=session.get('user_id'), title=title)
     db.session.add(custom_category)
-    db.session.flush()  # Assign ID before adding websites
+    db.session.flush()
 
-    # Process each website URL – split by commas and add both versions.
     websites_list = [url.strip() for url in websites_str.split(",") if url.strip()]
     
     for base_url in websites_list:
-        if not base_url.startswith("http"):
-            base_url = base_url  # Ensure URLs are stored correctly
-            
-        website1 = CustomWebsite(
-            category_id=custom_category.id,
-            name=base_url,
-            url=base_url
-        )
-
-        website2 = CustomWebsite(
-            category_id=custom_category.id,
-            name=f"{base_url} (www)",
-            url=f"www.{base_url}" if not base_url.startswith("www.") else base_url
-        )
-
+        website1 = CustomWebsite(category_id=custom_category.id, name=base_url, url=base_url)
         db.session.add(website1)
-        db.session.add(website2)
 
     db.session.commit()
 

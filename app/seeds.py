@@ -1,16 +1,34 @@
-# app/seeds.py
-
+from sqlalchemy import inspect
 from .models import db, DefaultCategory, DefaultWebsite
+
+def table_exists(table_name):
+    """
+    Check if a table exists in the database.
+    """
+    inspector = inspect(db.engine)
+    return table_name in inspector.get_table_names()
+
+def create_tables():
+    """
+    Create tables if they do not exist.
+    """
+    db.create_all()
+    print("✅ All missing tables have been created.")
 
 def init_default_categories():
     """
     Initializes the default categories and associated websites into the database.
     Only runs if no default category is already present.
     """
-    # Check if any default category already exists.
+    if not table_exists("default_categories") or not table_exists("default_websites"):
+        print("⚠️ Default tables are missing. Creating tables first...")
+        create_tables()
+
+    # Check if default categories already exist
     if DefaultCategory.query.first():
-        print("Default categories already initialized.")
+        print("✅ Default categories already exist. Skipping insertion.")
         return
+
 
     default_data = {
         "Social Media 🟢": [
@@ -148,14 +166,16 @@ def init_default_categories():
                 name=name,
                 url=base_url
             )
-            # With www prepended
-            website2 = DefaultWebsite(
-                category_id=category.id,
-                name=f"{name} (www)",
-                url=f"www.{base_url}" if not base_url.startswith("www.") else base_url
-            )
+         
             db.session.add(website1)
-            db.session.add(website2)
+
 
     db.session.commit()
     print("Default categories and websites have been initialized.")
+
+def check_and_initialize():
+    """
+    Ensures all tables exist and inserts default data if needed.
+    """
+    create_tables()
+    init_default_categories()

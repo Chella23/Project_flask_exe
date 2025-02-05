@@ -62,15 +62,24 @@ document.getElementById('unblock-btn').addEventListener('click', async () => {
 });
 
 
-// Expand/Collapse Categories
-document.addEventListener("DOMContentLoaded", function () {
-    const categoryHeadings = document.querySelectorAll(".category h3");
-    categoryHeadings.forEach(heading => {
-        heading.addEventListener("click", function () {
-            this.parentElement.classList.toggle("expanded");
+document.addEventListener("DOMContentLoaded", () => {
+    const categories = document.querySelectorAll(".category");
+
+    categories.forEach(category => {
+        category.querySelector("h3").addEventListener("click", () => {
+            // Collapse all categories first
+            categories.forEach(cat => {
+                if (cat !== category) {
+                    cat.classList.remove("expanded");
+                }
+            });
+
+            // Toggle only the clicked category
+            category.classList.toggle("expanded");
         });
     });
 });
+
 
 // Search Functionality
 document.getElementById("search-btn").addEventListener("click", function () {
