@@ -15,8 +15,9 @@ from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
-from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite
+from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite
 from sqlalchemy.orm import joinedload
+
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -151,23 +152,52 @@ def unblock_site():
     success = unblock_website(website_url)
     return jsonify({"success": success, "action": "unblock", "website_url": website_url})
 
+# -------------------------
+# Categories Route
+# -------------------------
+
+# --- Categories Page ---
 @auth_bp.route('/categories')
 def categories():
-    user_id = session.get('user_id')
+    if 'user_id' not in session:
+        flash("You need to sign in first.", "error")
+        return redirect(url_for('auth.signin'))
+    
+    user_id = session['user_id']
 
-    default_categories = DefaultCategory.query.options(joinedload(DefaultCategory.websites)).all()
-    user_custom_categories = []
+    # Fetch all categories
+    default_categories = DefaultCategory.query.all()
+    custom_categories = CustomCategory.query.filter_by(user_id=user_id).all()
 
-    if user_id:
-        user_custom_categories = CustomCategory.query.filter_by(user_id=user_id).options(joinedload(CustomCategory.websites)).all()
+    # Fetch user's favorite entries
+    user_favorites = Favorite.query.filter_by(user_id=user_id).all()
+
+    # Build a dictionary for URL-based favorites keyed by category title.
+    favorite_urls = {}
+    for fav in user_favorites:
+        # Determine the category title using the relationship, if available.
+        if fav.default_category:
+            category_title = fav.default_category.title
+        elif fav.custom_category:
+            category_title = fav.custom_category.title
+        else:
+            category_title = "Uncategorized"
+        
+        # Only add URL-based favorites (where fav.url is set)
+        if fav.url:
+            if category_title not in favorite_urls:
+                favorite_urls[category_title] = []
+            favorite_urls[category_title].append(fav.url)
 
     return render_template("categories.html", 
-                           default_categories=default_categories, 
-                           user_custom_categories=user_custom_categories)
+                           default_categories=default_categories,
+                           custom_categories=custom_categories,
+                           favorite_urls=favorite_urls,
+                           user_favorites=[fav.default_category_id or fav.custom_category_id for fav in user_favorites])
 
-@auth_bp.route('/add_custom_category', methods=[Methods.POST])
+@auth_bp.route('/add_custom_category', methods=['POST'])
 def add_custom_category():
-    if not session.get('user_id'):
+    if 'user_id' not in session:
         flash("Please log in to add custom categories.", "error")
         return redirect(url_for('auth.signin'))
     
@@ -178,22 +208,184 @@ def add_custom_category():
         flash("Please provide both a title and at least one website URL.", "error")
         return redirect(url_for('auth.categories'))
     
-    existing_category = CustomCategory.query.filter_by(user_id=session.get('user_id'), title=title).first()
+    existing_category = CustomCategory.query.filter_by(user_id=session['user_id'], title=title).first()
     if existing_category:
         flash("A category with this title already exists.", "error")
         return redirect(url_for('auth.categories'))
     
-    custom_category = CustomCategory(user_id=session.get('user_id'), title=title)
+    custom_category = CustomCategory(user_id=session['user_id'], title=title)
     db.session.add(custom_category)
-    db.session.flush()
+    db.session.flush()  # to get the new category ID
 
     websites_list = [url.strip() for url in websites_str.split(",") if url.strip()]
     
     for base_url in websites_list:
-        website1 = CustomWebsite(category_id=custom_category.id, name=base_url, url=base_url)
-        db.session.add(website1)
+        website = CustomWebsite(category_id=custom_category.id, name=base_url, url=base_url)
+        db.session.add(website)
 
     db.session.commit()
-
     flash("Custom category added successfully!", "success")
     return redirect(url_for('auth.categories'))
+
+@auth_bp.route('/add_url_to_favorites/<int:category_id>/<string:category_type>', methods=['POST'])
+def add_url_to_favorites(category_id, category_type):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "User not logged in"})
+    
+    user_id = session['user_id']
+    data = request.get_json()
+    url = data.get('url')
+    website_name = data.get('website_name')  # Expect the client to send this (optional)
+    
+    if not url:
+        return jsonify({"success": False, "message": "No URL provided"})
+    
+    # Check if the URL is already favorited for this user
+    existing = Favorite.query.filter_by(user_id=user_id, url=url).first()
+    if existing:
+        return jsonify({"success": False, "message": "URL already in favorites"})
+    
+    # Retrieve the category to obtain its title
+    category_title = None
+    if category_type == "default":
+        category = DefaultCategory.query.get(category_id)
+    else:
+        category = CustomCategory.query.get(category_id)
+    
+    if category:
+        category_title = category.title
+
+    new_fav = Favorite(
+        user_id=user_id,
+        url=url,
+        website_name=website_name,
+        category_title=category_title,
+        default_category_id=category_id if category_type == "default" else None,
+        custom_category_id=category_id if category_type == "custom" else None
+    )
+    db.session.add(new_fav)
+    db.session.commit()
+    return jsonify({"success": True, "message": "URL added to favorites successfully"})
+
+@auth_bp.route('/add_to_favorites/<int:category_id>/', defaults={'category_type': 'default'}, methods=['POST'])
+@auth_bp.route('/add_to_favorites/<int:category_id>/<string:category_type>', methods=['POST'])
+def toggle_category_favorite(category_id, category_type):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "User not logged in"})
+    
+    user_id = session['user_id']
+    
+    if category_type == "default":
+        fav = Favorite.query.filter_by(user_id=user_id, default_category_id=category_id).first()
+    else:
+        fav = Favorite.query.filter_by(user_id=user_id, custom_category_id=category_id).first()
+    
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Removed from favorites"})
+    
+    # Add new favorite for the whole category (without a URL)
+    if category_type == "default":
+        new_fav = Favorite(user_id=user_id, default_category_id=category_id)
+    else:
+        new_fav = Favorite(user_id=user_id, custom_category_id=category_id)
+    
+    db.session.add(new_fav)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Added to favorites"})
+
+
+# -------------------------
+# Favorite Categories Route
+# -------------------------
+@auth_bp.route('/favourites')
+def favourites():
+    if 'user_id' not in session:
+        flash("Please log in to view favorites.", "error")
+        return redirect(url_for("auth.signin"))
+    
+    user_id = session['user_id']
+    user_favorites = Favorite.query.filter_by(user_id=user_id).all()
+    
+    # Build a dictionary for website-level favorites keyed by category title.
+    favorite_websites = {}
+    for fav in user_favorites:
+        if fav.url:  # This is an individual website favorite
+            if fav.default_category:
+                cat_title = fav.default_category.title
+            elif fav.custom_category:
+                cat_title = fav.custom_category.title
+            else:
+                cat_title = "Uncategorized"
+            if cat_title not in favorite_websites:
+                favorite_websites[cat_title] = []
+            favorite_websites[cat_title].append(fav.url)
+            # Here, for simplicity, we use the URL as the indicator.
+            # If you want to include website name and mark as favorited, you can build a dictionary:
+            # favorite_websites[cat_title].append({
+            #    "url": fav.url,
+            #    "website_name": fav.website_name,
+            #    "category_id": fav.default_category.id if fav.default_category else fav.custom_category.id,
+            #    "favorited": True
+            # })
+    
+    # Build lists for category-level favorites
+    favorite_default_categories = []
+    favorite_custom_categories = []
+    for fav in user_favorites:
+        if not fav.url:  # Category favorite (entire category)
+            if fav.default_category and fav.default_category not in favorite_default_categories:
+                favorite_default_categories.append(fav.default_category)
+            elif fav.custom_category and fav.custom_category not in favorite_custom_categories:
+                favorite_custom_categories.append(fav.custom_category)
+    
+    # user_favorites (used for header icon check) as a list of category IDs
+    user_fav_ids = [fav.default_category_id or fav.custom_category_id for fav in user_favorites if not fav.url]
+
+    return render_template("fav.html",
+                           favorite_default_categories=favorite_default_categories,
+                           favorite_custom_categories=favorite_custom_categories,
+                           favorite_websites=favorite_websites,
+                           user_favorites=user_fav_ids)
+
+@auth_bp.route('/toggle_website_favorite/<int:category_id>/', defaults={'category_type': 'default'}, methods=['POST'])
+@auth_bp.route('/toggle_website_favorite/<int:category_id>/<string:category_type>', methods=['POST'])
+def toggle_website_favorite(category_id, category_type):
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "User not logged in"})
+    
+    user_id = session['user_id']
+    data = request.get_json()
+    website_url = data.get('url')
+    if not website_url:
+        return jsonify({"success": False, "message": "No URL provided"})
+
+    # Query for an existing website favorite for this category
+    fav = Favorite.query.filter_by(user_id=user_id, url=website_url).first()
+    if fav:
+        # Remove this website favorite
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({"success": True, "message": "Website removed from favorites"})
+    
+    # If not already favorited, add it
+    # Retrieve the category title from the respective category.
+    category_title = None
+    if category_type == "default":
+        category = DefaultCategory.query.get(category_id)
+    else:
+        category = CustomCategory.query.get(category_id)
+    if category:
+        category_title = category.title
+
+    new_fav = Favorite(
+        user_id=user_id,
+        url=website_url,
+        category_title=category_title,
+        default_category_id=category_id if category_type=="default" else None,
+        custom_category_id=category_id if category_type=="custom" else None
+    )
+    db.session.add(new_fav)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Website added to favorites"})

@@ -11,6 +11,9 @@ document.addEventListener("DOMContentLoaded", function () {
         menuToggle.classList.toggle("active");
     });
 });
+
+
+
 document.getElementById('block-btn').addEventListener('click', async () => {
     const websiteUrl = document.getElementById('website-url').value.trim();
 

@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const websiteInput = document.getElementById("website");
-    const blockBtn = document.getElementById("blockBtn");
-    const blockedWebsitesList = document.getElementById("blockedWebsitesList");
+    const websiteInput = document.getElementById("website-url");
+    const blockBtn = document.getElementById("block-btn");
+    const blockedWebsitesList = document.getElementById("blocked-list");
 
     // Load blocked websites on page load
     const loadBlockedWebsites = () => {
@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     const li = document.createElement("li");
                     li.textContent = website;
 
+                    // 
                     // Create a delete button
                     const deleteBtn = document.createElement("button");
                     deleteBtn.textContent = "🗑️";

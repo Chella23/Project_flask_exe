@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -20,12 +21,63 @@
       });
     });
 
+    // Toggle the entire category's favorite status.
+    function toggleCategoryFavorite(event, categoryId, categoryType) {
+      event.stopPropagation();
+      fetch(`/add_to_favorites/${categoryId}/${categoryType}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({})
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Toggle the icon in the header.
+          let icon = event.target;
+          icon.innerText = icon.innerText === "❤️" ? "♡" : "❤️";
+          icon.classList.toggle("favorited");
+          // Optionally refresh the page or update the UI so that all website items in this category
+          // show as favorited/unfavorited.
+        } else {
+          Swal.fire("Error", data.message, "error");
+        }
+      })
+      .catch(error => console.error("Error:", error));
+    }
+
+    // Toggle an individual website's favorite status.
+    function toggleWebsiteFavorite(event, categoryId, categoryType, websiteUrl) {
+      event.stopPropagation();
+      fetch(`/toggle_website_favorite/${categoryId}/${categoryType}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest"
+        },
+        body: JSON.stringify({ url: websiteUrl })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          let icon = event.target;
+          icon.innerText = icon.innerText === "❤️" ? "♡" : "❤️";
+          icon.classList.toggle("favorited");
+          // The category header's favorite icon should not be altered here.
+        } else {
+          Swal.fire("Error", data.message, "error");
+        }
+      })
+      .catch(error => console.error("Error:", error));
+    }
+
     // Function to add a website URL to the textarea.
     function addToTextarea(url) {
       const textarea = document.getElementById("website-url");
       const currentUrls = textarea.value.split("\n").map(u => u.trim());
       const urlsToAdd = [url, `www.${url}`]; // Add both www and non-www versions
-
       urlsToAdd.forEach(u => {
         if (!currentUrls.includes(u)) {
           if (textarea.value.trim() === "") {
@@ -38,6 +90,7 @@
     }
   </script>
 </head>
+
 <body>
   <div class="dashboard">
     <!-- Sidebar -->
@@ -50,7 +103,7 @@
       <ul class="menu">
         <li><a href="{{ url_for('auth.success') }}">Home</a></li>
         <li><a href="{{ url_for('auth.categories') }}" class="active">Categories</a></li>
-        <li><a href="#">Favourites</a></li>
+        <li><a href="{{ url_for('auth.favourites') }}">Favourites</a></li>
         <li><a href="#">Multi-Factor Authentication</a></li>
         <li><a href="#">Password Protection</a></li>
       </ul>
@@ -89,69 +142,87 @@
         </div>
       </section>
 
-   <!-- Default Categories Section -->
-   <section id="default-categories">
-    <h2>Default Website Categories</h2>
-   </br>
-    {% if default_categories %}
-      {% for category in default_categories %}
-        <div class="category">
-          <h3>{{ category.title }}</h3>
-          <ul>
-            {% for website in category.websites %}
-              <li>
-                {{ website.name }} 
-                <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      {% endfor %}
-    {% else %}
-      <p>No default categories available.</p>
-    {% endif %}
-  </section>
+      {% if session.get('user_id') %}
+      <section id="add-custom-category">
+        <h2>Add Custom Category</h2>
+        <form id="custom-category-form" method="post" action="{{ url_for('auth.add_custom_category') }}">
+          <label for="category-title">Category Title:</label>
+          <input type="text" id="category-title" name="category_title" required>
+          <label for="category-websites">Website URLs (separated by commas):</label>
+          <textarea id="category-websites" name="category_websites" rows="3" required></textarea>
+          <button type="submit">Add Category</button>
+        </form>
+      </section>
+      {% endif %}
 
-  <!-- Custom Categories Section -->
-  {% if session.get('user_id') %}
-    <section id="custom-categories">
-      <h2>Your Custom Categories</h2>
-      {% if user_custom_categories %}
-        {% for category in user_custom_categories %}
+      <!-- Custom Categories Section -->
+      <section id="custom-categories">
+        <h2>Your Custom Categories</h2>
+        <br>
+        {% if user_custom_categories %}
+          {% for category in user_custom_categories %}
           <div class="category">
-            <h3>{{ category.title }}</h3>
+            <h3>
+              {{ category.title }}
+              <!-- Category-level toggle: Clicking here toggles the entire category favorite -->
+              <span class="fav-icon" onclick="toggleCategoryFavorite(event, '{{ category.id }}', '{{ category.type }}')">
+                {{ '❤️' if category.id in user_favorites else '♡' }}
+              </span>
+            </h3>
             <ul>
               {% for website in category.websites %}
-                <li>
-                  {{ website.name }} 
-                  <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
-                </li>
+              <li>
+                {{ website.name }}
+                <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
+                <!-- Individual website toggle: Clicking toggles only that website's favorite state -->
+                <span class="fav-icon" onclick="toggleWebsiteFavorite(event, '{{ category.id }}', '{{ category.type }}', '{{ website.url }}')">
+                  {{ '❤️' if website.url in favorite_urls.get(category.title, []) else '♡' }}
+                </span>
+              </li>
               {% endfor %}
             </ul>
           </div>
-        {% endfor %}
-      {% else %}
-        <p>No custom categories added yet.</p>
-      {% endif %}
-    </section>
+          {% endfor %}
+        {% else %}
+          <p>No custom categories added yet.</p>
+        {% endif %}
+      </section>
 
-    <!-- Form to Add a Custom Category -->
-    <section id="add-custom-category">
-      <h2>Add Custom Category</h2>
-      <form id="custom-category-form" method="post" action="{{ url_for('auth.add_custom_category') }}">
-        <label for="category-title">Category Title:</label>
-        <input type="text" id="category-title" name="category_title" required>
+      <!-- Default Categories Section -->
+      <section id="default-categories">
+        <h2>Default Website Categories</h2>
+        <br>
+        {% if default_categories %}
+          {% for category in default_categories %}
+          <div class="category">
+            <h3>
+              {{ category.title }}
+              <span class="fav-icon" onclick="toggleCategoryFavorite(event, '{{ category.id }}', '{{ category.type }}')">
+                {{ '❤️' if category.id in user_favorites else '♡' }}
+              </span>
+            </h3>
+            <ul>
+              {% for website in category.websites %}
+              <li>
+                {{ website.name }}
+                <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
+                <span class="fav-icon" onclick="toggleWebsiteFavorite(event, '{{ category.id }}', '{{ category.type }}', '{{ website.url }}')">
+                  {{ '❤️' if website.url in favorite_urls.get(category.title, []) else '♡' }}
+                </span>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p>No default categories available.</p>
+        {% endif %}
+      </section>
+    </div>
+  </div>
 
-        <label for="category-websites">Website URLs (separated by commas):</label>
-        <textarea id="category-websites" name="category_websites" rows="3" required></textarea>
-
-        <button type="submit">Add Category</button>
-      </form>
-    </section>
-  {% endif %}
-</div>
-</div>
   <script src="{{ url_for('static', filename='js/app.js') }}?v=2"></script>
-  <script src="/static/js/script.js?v=2"></script>
+  <script src="{{ url_for('static', filename='js/script.js') }}?v=2"></script>
 </body>
+
 </html>

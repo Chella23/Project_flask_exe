@@ -10,7 +10,7 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a40); /* Dark theme gradient */
+    background: linear-gradient(135deg, #1e1e2f, #2a2a40); /* Dark theme gradient remains */
     font-family: 'Roboto', Arial, sans-serif;
     color: #fff;
 }
@@ -67,8 +67,9 @@
     text-decoration: none;
     padding: 12px 20px;
     margin: 2px 0;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    /* Vibrant multiple-color gradient background */
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border-radius: 12px;
     font-size: 16px;
     font-weight: bold;
@@ -79,9 +80,10 @@
 }
 
 .sidebar .menu a:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    /* Alternate vibrant gradient on hover */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 .sidebar .menu a:active {
@@ -117,8 +119,8 @@
     margin-left: 250px;
     flex-grow: 1;
     padding: 20px;
-    background: rgba(255, 255, 255, 0.1); /* Semi-transparent background */
-    backdrop-filter: blur(12px);
+    background: #fff; /* White background for main content */
+    color: #333; /* Dark text for readability */
     overflow-y: auto;
     transition: margin-left 0.3s ease;
     border-radius: 12px 0 0 12px;
@@ -135,15 +137,16 @@
     align-items: center;
     margin-bottom: 20px;
     margin-left: 50px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     padding: 10px 15px;
     border-radius: 8px;
-    color: white;
+    color: #333;
 }
 
 /* Content styling */
 #content {
-    background: rgba(255, 255, 255, 0.1);
+    background: #fff; /* White background */
+    color: #333;
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -160,28 +163,29 @@
 
 #website-url {
     padding: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background: #fff;
     border-radius: 8px;
     font-size: 16px;
-    color: white;
+    color: #333;
     outline: none;
     transition: border 0.3s, box-shadow 0.3s;
 }
 
 #website-url::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(0, 0, 0, 0.6);
 }
 
 #website-url:focus {
-    border-color: #6a11cb;
-    box-shadow: 0 0 8px rgba(106, 17, 203, 0.5);
+    border-color: #FF6B6B;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
 }
 
 #block-btn {
     padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    /* Multiple-color gradient for button */
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -191,9 +195,9 @@
 }
 
 #block-btn:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 #block-btn:active {
@@ -251,8 +255,9 @@ a {
     text-decoration: none;
     padding: 12px 20px;
     margin: 2px 0;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    /* Vibrant multi-color gradient for links */
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border-radius: 12px;
     font-size: 16px;
     font-weight: bold;
@@ -263,9 +268,9 @@ a {
 }
 
 a:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 a:active {
@@ -281,8 +286,9 @@ a:active {
 
 #unblock-btn {
     padding: 12px 20px;
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white;
+    /* A distinct vibrant gradient for the unblock button */
+    background: linear-gradient(135deg, #4A90E2, #9013FE, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 12px;
     cursor: pointer;
@@ -291,14 +297,15 @@ a:active {
 }
 
 #unblock-btn:hover {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
+    background: linear-gradient(135deg, #50E3C2, #9013FE, #4A90E2);
     transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(231, 76, 60, 0.5);
+    box-shadow: 0 5px 15px rgba(80, 227, 194, 0.5);
 }
 
 .signout {
     margin-left: 20px; /* Adjust spacing as needed */
 }
+
 /* Search Bar */
 .search-bar {
     display: flex;
@@ -309,28 +316,29 @@ a:active {
 #search-input {
     flex: 1;
     padding: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background: #fff;
     border-radius: 8px;
-    color: white;
+    color: #333;
     font-size: 16px;
     outline: none;
     transition: border 0.3s, box-shadow 0.3s;
 }
 
 #search-input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(0, 0, 0, 0.6);
 }
 
 #search-input:focus {
-    border-color: #6a11cb;
-    box-shadow: 0 0 8px rgba(106, 17, 203, 0.5);
+    border-color: #FF6B6B;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.5);
 }
 
 #search-btn {
     padding: 10px 20px;
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
-    color: white;
+    /* Multi-color gradient for the search button */
+    background: linear-gradient(135deg, #F8E71C, #50E3C2, #FF6B6B);
+    color: #fff;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -340,14 +348,14 @@ a:active {
 
 #search-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 5px 15px rgba(80, 227, 194, 0.4);
 }
 
 /* Default and Custom Categories */
 #default-categories, #custom-categories {
     margin-top: 20px;
     padding: 15px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 12px;
     display: grid;
     grid-template-columns: repeat(2, 1fr); /* Two columns */
@@ -355,25 +363,28 @@ a:active {
 }
 
 .category {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: 8px;
     padding: 1rem;
     transition: all 0.3s ease;
     overflow: hidden;
+    position: relative;
 }
 
+/* Category Header */
 .category h3 {
     cursor: pointer;
     display: grid;
-    grid-template-columns: 1fr auto; /* Title + emoji on left, toggle icon on right */
+    grid-template-columns: 1fr auto; /* Title & Expand Icon */
     align-items: center;
     gap: 10px;
-    color: #fff;
+    color: #333;
     font-size: 1.2rem;
     margin: 0;
     padding: 0.8rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.03);
     border-radius: 6px;
+    position: relative;
 }
 
 /* Toggle Icon */
@@ -384,7 +395,7 @@ a:active {
     justify-self: end;
 }
 
-/* Only the clicked category expands */
+/* Expanded Category */
 .category.expanded h3::after {
     content: '−';
 }
@@ -399,41 +410,100 @@ a:active {
 }
 
 .category.expanded ul {
-    max-height: 500px; /* Adjust based on content */
+    max-height: 100%; /* Adjust based on content */
     padding: 0.8rem 0;
 }
 
-  
-  .add-icon {
+/* Styling for the category website list */
+.category ul li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid #ddd;
+    transition: background 0.2s ease-in-out;
+}
+
+/* Fix last URL visibility issue */
+.category ul li:last-child {
+    border-bottom: none; /* Remove border from the last item */
+    padding-bottom: 12px;
+}
+
+.category ul li:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+/* Aligning website name and icons properly */
+.category ul li .website-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-grow: 1;
+}
+
+/* Aligning fav-icon and add-icon */
+.category ul li .icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Favorite Icon */
+.fav-icon {
+    font-size: 1.6rem;
     cursor: pointer;
-    padding: 5px;
-    border: 1px solid #4CAF50;
-    border-radius: 50%;
-    font-weight: bold;
-    color: #4CAF50;
-    transition: all 0.3s ease-in-out;
-  }
-  
-  .add-icon:hover {
-    background-color: #4CAF50;
-    color: white;
-  }
-  
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+/* Default: Not Favorited */
+.fav-icon.unfavorited {
+    color: #bbb; /* Subtle gray */
+}
+
+/* Favorited */
+.fav-icon.favorited {
+    color: #FF6B6B; /* Vibrant red */
+    transform: scale(1.1); /* Slight pop effect */
+}
+
+/* Hover Effect */
+.fav-icon:hover {
+    color: #FF4F4F; /* Slightly deeper red */
+    transform: scale(1.2);
+}
+
+/* Active Click Effect */
+.fav-icon:active {
+    transform: scale(1);
+    opacity: 0.8;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    #default-categories, #custom-categories {
+        grid-template-columns: 1fr; /* Single column layout */
+    }
+}
+
+
+
 
 /* Plus Icon for Adding Websites */
 .add-icon {
     cursor: pointer;
+
     padding: 5px;
-    border: 1px solid #4CAF50;
+    border: 1px solid #FF6B6B;
     border-radius: 50%;
     font-weight: bold;
-    color: #4CAF50;
+    color: #FF6B6B;
     transition: all 0.3s ease-in-out;
 }
 
 .add-icon:hover {
-    background-color: #4CAF50;
-    color: white;
+    background-color: #FF6B6B;
+    color: #fff;
 }
 
 /* Responsive Design */
@@ -453,72 +523,53 @@ a:active {
 }
 
 
-/* Plus Icon for Adding Websites */
-.add-icon {
-    cursor: pointer;
-    margin-left: 10px;
-    padding: 2px 8px;
-    border: 1px solid #4CAF50;
-    border-radius: 50%;
-    font-weight: bold;
-    color: #4CAF50;
-    transition: all 0.3s ease;
-}
-
-.add-icon:hover {
-    background-color: #4CAF50;
-    color: white;
-}
-
 /* Blocked Websites Container */
 #blocked-websites {
     margin-top: 20px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     padding: 15px;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
+}
   
-  /* Blocked Websites Heading */
-  #blocked-websites h2 {
+/* Blocked Websites Heading */
+#blocked-websites h2 {
     text-align: center;
-    color: #fff;
+    color: #333;
     margin-bottom: 15px;
-  }
+}
   
-  /* Blocked Websites List */
-  #blocked-list {
+/* Blocked Websites List */
+#blocked-list {
     list-style: none;
     padding: 0;
     margin: 0;
-  }
+}
   
-  /* List Items */
-  #blocked-list li {
+/* List Items */
+#blocked-list li {
     padding: 10px 15px;
     margin-bottom: 10px;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    color: #fff;
+    color: #333;
     font-size: 16px;
-  }
+}
   
-  /* Unblock Button within List Items */
-  #blocked-list li button {
-    background: linear-gradient(135deg, #e74c3c, #c0392b);
-    color: white;
+/* Unblock Button within List Items */
+#blocked-list li button {
+    background: linear-gradient(135deg, #4A90E2, #9013FE, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 6px;
     padding: 5px 10px;
     cursor: pointer;
     transition: background 0.3s ease;
-  }
+}
   
-  #blocked-list li button:hover {
-    background: linear-gradient(135deg, #c0392b, #e74c3c);
-  }
-  
-
+#blocked-list li button:hover {
+    background: linear-gradient(135deg, #50E3C2, #9013FE, #4A90E2);
+}
