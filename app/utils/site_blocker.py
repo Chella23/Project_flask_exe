@@ -10,7 +10,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import json
-
+import re
 
 def terminate_chrome_processes():
     """
@@ -127,7 +127,177 @@ def clear_browser_cache():
         print(f"❌ Error clearing browser cache: {e}")
 
 
+import re
+import subprocess
 import platform
+import socket
+
+def resolve_ips(website):
+    """
+    Resolves a website's IPv4 and IPv6 addresses using nslookup with Google's public DNS (8.8.8.8).
+    Returns a list of unique public IP addresses.
+    """
+    try:
+        result = subprocess.run(
+            ["nslookup", website],  # Use system's default resolver
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        output = result.stdout
+
+        # Regex for IPv4 and IPv6 addresses
+        ipv4_pattern = r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'
+        ipv6_pattern = r'([a-fA-F0-9:]+:[a-fA-F0-9:]+)'
+
+        ipv4_matches = re.findall(ipv4_pattern, output)
+        ipv6_matches = re.findall(ipv6_pattern, output)
+
+        # Remove duplicates and filter out private/local network IPs
+        all_ips = list(dict.fromkeys(ipv4_matches + ipv6_matches))
+        public_ips = [ip for ip in all_ips if not is_private_ip(ip)]
+
+        if public_ips:
+            return public_ips
+        else:
+            print(f"\u274C No public IP addresses found for {website}.")
+            return None
+
+    except Exception as e:
+        print(f"\u274C Error resolving {website} with nslookup: {e}")
+        return None
+
+def is_private_ip(ip):
+    """
+    Checks if the given IP is private (local network) or public.
+    Ensures we don't block local connections.
+    """
+    try:
+        socket.inet_pton(socket.AF_INET, ip)  # Check IPv4
+        private_ranges = ["10.", "172.16.", "192.168.", "127.", "169.254."]
+        return any(ip.startswith(prefix) for prefix in private_ranges)
+    except OSError:
+        pass  # If not IPv4, continue to IPv6
+
+    try:
+        socket.inet_pton(socket.AF_INET6, ip)  # Check IPv6
+        return ip.startswith(("fe80:", "fc00:", "fd00:", "::1"))  # Link-local or loopback
+    except OSError:
+        return False
+
+def block_firewall(websites):
+    """
+    Blocks each website by creating a single firewall rule per website.
+    All resolved IPs for the website are grouped under one rule.
+    """
+    system = platform.system()
+    websites_list = [w.strip() for w in websites.replace(",", "\n").splitlines() if w.strip()]
+    success = True
+
+    for website in websites_list:
+        ips = resolve_ips(website)
+        if not ips:
+            success = False
+            continue
+
+        if system == "Windows":
+            rule_name = f"Block_{website}"
+            remote_ips = ",".join(ips)  # All IPs in one rule
+
+            cmd = [
+                "netsh", "advfirewall", "firewall", "add", "rule",
+                f"name={rule_name}",
+                "dir=out",
+                "action=block",
+                f"remoteip={remote_ips}"
+            ]
+            try:
+                subprocess.run(cmd, check=True)
+                print(f"\u2705 Windows Firewall rule added for {website} with IPs: {remote_ips}")
+            except subprocess.CalledProcessError as e:
+                print(f"\u274C Error adding firewall rule for {website}: {e}")
+                success = False
+
+        elif system == "Linux":
+            for ip in ips:
+                cmd = ["sudo", "iptables", "-A", "OUTPUT", "-d", ip, "-j", "DROP"]
+                try:
+                    subprocess.run(cmd, check=True)
+                    print(f"\u2705 iptables rule added for {website} with IP: {ip}")
+                except subprocess.CalledProcessError as e:
+                    print(f"\u274C Error adding iptables rule for {website}: {e}")
+                    success = False
+
+        elif system == "Darwin":
+            print("\u26A0\uFE0F macOS firewall blocking is not implemented. Consider using pf.")
+            success = False
+
+        else:
+            print("\u26A0\uFE0F Unsupported operating system for firewall blocking.")
+            success = False
+
+    return success
+
+
+def unblock_firewall(websites):
+    """
+    Unblocks each website by removing its corresponding firewall rule.
+    """
+    system = platform.system()
+    websites_list = [w.strip() for w in websites.replace(",", "\n").splitlines() if w.strip()]
+    success = True
+
+    for website in websites_list:
+        if system == "Windows":
+            rule_name = f"Block_{website}"
+            cmd = ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={rule_name}"]
+            try:
+                subprocess.run(cmd, check=True)
+                print(f"✅ Windows Firewall rule removed for {website}.")
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Error removing firewall rule for {website}: {e}")
+                success = False
+
+        elif system == "Linux":
+            try:
+                # Check for existing rules before deleting
+                result = subprocess.run(
+                    ["sudo", "iptables", "-L", "OUTPUT", "-n"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    check=True
+                )
+                output = result.stdout
+
+                # Extract blocked IPs
+                pattern = rf"DROP\s+all\s+\-\-\s+.+\s+(\d+\.\d+\.\d+\.\d+)"
+                blocked_ips = re.findall(pattern, output)
+
+                if not blocked_ips:
+                    print(f"⚠️ No iptables rules found for {website}.")
+                    continue
+
+                # Remove only the rules that were previously added
+                for ip in blocked_ips:
+                    cmd = ["sudo", "iptables", "-D", "OUTPUT", "-d", ip, "-j", "DROP"]
+                    subprocess.run(cmd, check=True)
+                    print(f"✅ iptables rule removed for {website} ({ip}).")
+
+            except subprocess.CalledProcessError as e:
+                print(f"❌ Error removing iptables rules for {website}: {e}")
+                success = False
+
+        elif system == "Darwin":
+            print("⚠️ macOS firewall unblocking is not implemented. Consider using pf.")
+            success = False
+
+        else:
+            print("⚠️ Unsupported operating system for firewall unblocking.")
+            success = False
+
+    return success
 
 def modify_hosts_file(action, websites_text):
     """
@@ -188,135 +358,19 @@ def modify_hosts_file(action, websites_text):
 
 
 
-def resolve_ipv4(website):
-    """
-    Resolves a website domain to its IPv4 address.
-    Returns the IPv4 address as a string if successful, or None if it fails.
-    """
-    try:
-        # getaddrinfo returns a list of address info for the given host.
-        # We filter for AF_INET to get IPv4 addresses.
-        addr_info = socket.getaddrinfo(website, None, socket.AF_INET)
-        if addr_info:
-            ip_address = addr_info[0][4][0]
-            return ip_address
-    except Exception as e:
-        print(f"❌ Unable to resolve {website}: {e}")
-    return None
-
-def block_firewall(website):
-    """
-    Blocks the website at the firewall level.
-    
-    For Windows, this function creates a firewall rule that blocks outbound traffic 
-    to the website's resolved IPv4 address.
-    For Linux, an iptables rule is added (requires root privileges).
-    For macOS, a placeholder message is shown.
-    
-    Parameters:
-      website (str): The website domain (e.g., "www.example.com")
-    
-    Returns:
-      bool: True if successful, False otherwise.
-    """
-    system = platform.system()
-    try:
-        ip_address = resolve_ipv4(website)
-        if not ip_address:
-            return False
-
-        if system == "Windows":
-            rule_name = f"Block_{website}"
-            # Create a firewall rule using netsh command with the resolved IPv4 address.
-            cmd = [
-                "netsh", "advfirewall", "firewall", "add", "rule",
-                f"name={rule_name}",
-                "dir=out",
-                "action=block",
-                f"remoteip={ip_address}"
-            ]
-            subprocess.run(cmd, check=True)
-            print(f"✅ Windows Firewall rule added to block {website} ({ip_address}).")
-            return True
-
-        elif system == "Linux":
-            cmd = ["sudo", "iptables", "-A", "OUTPUT", "-d", ip_address, "-j", "DROP"]
-            subprocess.run(cmd, check=True)
-            print(f"✅ iptables rule added to block {website} ({ip_address}).")
-            return True
-
-        elif system == "Darwin":
-            print("⚠️ macOS firewall blocking is not implemented. Consider using pf.")
-            return False
-
-        else:
-            print("⚠️ Unsupported operating system for firewall blocking.")
-            return False
-
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error adding firewall rule: {e}")
-        return False
-
-def unblock_firewall(website):
-    """
-    Unblocks the website at the firewall level.
-    
-    For Windows, this function deletes the firewall rule for the website.
-    For Linux, the corresponding iptables rule is removed.
-    For macOS, a placeholder message is shown.
-    
-    Parameters:
-      website (str): The website domain (e.g., "www.example.com")
-    
-    Returns:
-      bool: True if successful, False otherwise.
-    """
-    system = platform.system()
-    try:
-        ip_address = resolve_ipv4(website)
-        if not ip_address:
-            return False
-
-        if system == "Windows":
-            rule_name = f"Block_{website}"
-            cmd = [
-                "netsh", "advfirewall", "firewall", "delete", "rule",
-                f"name={rule_name}"
-            ]
-            subprocess.run(cmd, check=True)
-            print(f"✅ Windows Firewall rule removed for {website}.")
-            return True
-
-        elif system == "Linux":
-            cmd = ["sudo", "iptables", "-D", "OUTPUT", "-d", ip_address, "-j", "DROP"]
-            subprocess.run(cmd, check=True)
-            print(f"✅ iptables rule removed for {website} ({ip_address}).")
-            return True
-
-        elif system == "Darwin":
-            print("⚠️ macOS firewall unblocking is not implemented. Consider using pf.")
-            return False
-
-        else:
-            print("⚠️ Unsupported operating system for firewall unblocking.")
-            return False
-
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error removing firewall rule: {e}")
-        return False
-
 def block_website(website_url):
     """
     Blocks a website by adding it to the hosts file and clearing caches.
     """
-    success_hosts = modify_hosts_file("block", website_url)
     success_firewall = block_firewall(website_url)
+    success_hosts = modify_hosts_file("block", website_url)
+    
     clear_dns_cache()
     clear_browser_cache()
     terminate_chrome_processes()
     #clear_chrome_dns_cache()
 
-    if success_hosts and success_firewall:
+    if success_firewall  and success_hosts:
        
         print(f"✅ Website {website_url} has been successfully blocked.")
         return True
@@ -329,14 +383,15 @@ def unblock_website(website_url):
     """
     Unblocks a website by removing it from the hosts file and clearing caches.
     """
+    success_firewall = unblock_firewall(website_url)
     success_hosts = modify_hosts_file("unblock", website_url)
-    success_firewall = block_firewall(website_url)
+    
     clear_dns_cache()
     clear_browser_cache()
 
     #clear_chrome_dns_cache()
 
-    if success_hosts and success_firewall:
+    if success_firewall  and success_hosts:
 
         print(f"✅ Website {website_url} has been successfully unblocked.")
         return True

@@ -74,7 +74,7 @@
  function addToTextarea(url) {
       const textarea = document.getElementById("website-url");
       const currentUrls = textarea.value.split("\n").map(u => u.trim());
-      const urlsToAdd = [url, `www.${url}`]; // Add both www and non-www versions
+      const urlsToAdd = [`www.${url}`, url ]; // Add both www and non-www versions
       urlsToAdd.forEach(u => {
         if (!currentUrls.includes(u)) {
           if (textarea.value.trim() === "") {
