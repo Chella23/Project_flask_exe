@@ -12,17 +12,6 @@ from selenium.webdriver.chrome.options import Options
 import json
 import re
 
-def terminate_chrome_processes():
-    """
-    Terminate all Chrome processes to unlock cache files.
-    """
-    try:
-        for proc in psutil.process_iter(['name']):
-            if proc.info['name'] and "chrome" in proc.info['name'].lower():
-                proc.kill()  # Use .kill() for a forceful stop
-        print("✅ All Chrome processes terminated successfully.")
-    except Exception as e:
-        print(f"❌ Error terminating Chrome processes: {e}")
 
 
 def clear_dns_cache():
@@ -367,7 +356,7 @@ def block_website(website_url):
     
     clear_dns_cache()
     clear_browser_cache()
-    terminate_chrome_processes()
+ 
     #clear_chrome_dns_cache()
 
     if success_firewall  and success_hosts:
