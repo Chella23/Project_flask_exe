@@ -129,26 +129,52 @@ def verify_otp():
         return jsonify({"success": True, "message": Constants.OTP_VERIFIED})
 
     return jsonify({"error": Constants.INCORRECT_EXPIRED_OTP}), 400
-
 @auth_bp.route('/block', methods=[Methods.POST])
 def block_site():
-    data = request.json
-    website_url = data.get("website_url")
+    data = request.get_json()
+    print(f"Received data: {data}")  # Debugging print
 
-    if not website_url:
-        return jsonify({"success": False, "message": "Invalid website URL"})
+    if not data:
+        return jsonify({"success": False, "message": "Invalid request format"}), 400
+
+    password = data.get("password")
+    
+    # ✅ Check for both 'website' and 'website_url'
+    website_url = data.get("website_url") or data.get("website")
+    if website_url:
+        website_url = website_url.strip()
+
+
+    if password_store["enabled"] and password != password_store["password"]:
+        return jsonify({"success": False, "message": "Incorrect password"}), 400
+
+    if not website_url or "." not in website_url:
+        print("Website URL validation failed")  # Debugging print
+        return jsonify({"success": False, "message": "Invalid website URL"}), 400
 
     success = block_website(website_url)
     return jsonify({"success": success, "action": "block", "website_url": website_url})
 
 @auth_bp.route('/unblock', methods=[Methods.POST])
 def unblock_site():
-    data = request.json
-    website_url = data.get("website_url")
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "Invalid request format"}), 400
 
-    if not website_url:
-        return jsonify({"success": False, "message": "Invalid website URL"})
+    password = data.get("password")
+    # ✅ Check for both 'website' and 'website_url'
+    website_url = data.get("website_url") or data.get("website")
+    if website_url:
+        website_url = website_url.strip()
+    # Step 1: Validate password first
+    if password_store["enabled"] and password != password_store["password"]:
+        return jsonify({"success": False, "message": "Incorrect password"}), 400
 
+    # Step 2: Validate website URL only if password is correct
+    if not website_url or "." not in website_url:
+        return jsonify({"success": False, "message": "Invalid website URL"}), 400
+
+    # Step 3: Attempt to unblock the website
     success = unblock_website(website_url)
     return jsonify({"success": success, "action": "unblock", "website_url": website_url})
 
@@ -389,3 +415,37 @@ def toggle_website_favorite(category_id, category_type):
     db.session.add(new_fav)
     db.session.commit()
     return jsonify({"success": True, "message": "Website added to favorites"})
+
+
+
+password_store = {"enabled": False, "password": None}  # Global password storage
+
+@auth_bp.route("/set_password", methods=["POST"])
+def set_password():
+    data = request.json
+    password_store["password"] = data["password"]
+    return jsonify({"message": "Password set successfully"})
+
+@auth_bp.route("/enable_protection", methods=["POST"])
+def enable_protection():
+    password_store["enabled"] = True
+    return jsonify({"success": True})
+
+@auth_bp.route("/disable_protection", methods=["POST"])
+def disable_protection():
+    data = request.json
+    if password_store["password"] and data["password"] == password_store["password"]:
+        password_store["enabled"] = False
+        return jsonify({"success": True})
+    return jsonify({"success": False, "message": "Incorrect password"})
+
+@auth_bp.route("/get_protection_status", methods=["GET"])
+def get_protection_status():
+    return jsonify({"enabled": password_store["enabled"]})
+
+@auth_bp.route("/password_protection", methods=["GET"])
+def password_protection():
+    """
+    Serves the Password Protection setup page.
+    """
+    return render_template("pass_pro.html")

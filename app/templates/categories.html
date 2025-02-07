@@ -88,6 +88,59 @@
         }
       });
     }
+
+
+    document.getElementById("block-btn").addEventListener("click", function () {
+    checkPasswordProtection("block");
+});
+
+document.getElementById("unblock-btn").addEventListener("click", function () {
+    checkPasswordProtection("unblock");
+});
+
+function checkPasswordProtection(action) {
+    fetch("/get_protection_status")
+        .then(response => response.json())
+        .then(data => {
+            if (data.enabled) {
+                Swal.fire({
+                    title: "Enter Password",
+                    input: "password",
+                    showCancelButton: true
+                }).then(result => {
+                    if (result.value) {
+                        performAction(action, result.value);
+                    }
+                });
+            } else {
+                performAction(action);
+            }
+        });
+}
+
+function performAction(action, password = null) {
+    const website = document.getElementById("website-url").value.trim();
+    if (!website) {
+        Swal.fire("Error", "Please enter a website URL!", "error");
+        return;
+    }
+
+    fetch(`/${action}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ website, password })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            Swal.fire("Success", data.message, "success");
+        } else {
+            Swal.fire("Error", data.message, "error");
+        }
+    });
+}
+
+
   </script>
 </head>
 
@@ -105,7 +158,7 @@
         <li><a href="{{ url_for('auth.categories') }}" class="active">Categories</a></li>
         <li><a href="{{ url_for('auth.favourites') }}">Favourites</a></li>
         <li><a href="#">Multi-Factor Authentication</a></li>
-        <li><a href="#">Password Protection</a></li>
+        <li><a href="{{ url_for('auth.password_protection')}}">Password Protection</a></li>
       </ul>
     </nav>
 

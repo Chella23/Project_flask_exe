@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Website Blocker Dashboard</title>
@@ -10,10 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            // Flash message handling
-            const flashMessages = JSON.parse(
-                '{{ get_flashed_messages(with_categories=True) | tojson | safe }}'
-            );
+            const flashMessages = JSON.parse('{{ get_flashed_messages(with_categories=True) | tojson | safe }}');
             flashMessages.forEach(([category, message]) => {
                 Swal.fire({
                     icon: category === 'success' ? 'success' : 'error',
@@ -22,35 +18,121 @@
                 });
             });
         });
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const blockBtn = document.getElementById("block-btn");
+            const unblockBtn = document.getElementById("unblock-btn");
+
+            function isValidURL(url) {
+                const regex = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                return regex.test(url);
+            }
+
+            async function isPasswordProtected() {
+                const response = await fetch("/get_protection_status");
+                const data = await response.json();
+                return data.enabled;
+            }
+
+            async function requestPassword() {
+                const { value: password } = await Swal.fire({
+                    title: "Enter Password",
+                    input: "password",
+                    inputPlaceholder: "Enter your password",
+                    inputAttributes: { autocapitalize: "off" },
+                    showCancelButton: true,
+                    confirmButtonText: "Submit",
+                    preConfirm: (password) => {
+                        if (!password) {
+                            Swal.showValidationMessage("Password is required");
+                        }
+                        return password;
+                    },
+                });
+                return password;
+            }
+
+            async function blockWebsite() {
+                const website = document.getElementById("website-url").value.trim();
+                if (!website || !isValidURL(website)) {
+                    Swal.fire("Error", "Please enter a valid website URL.", "error");
+                    return;
+                }
+
+                let password = "";
+                if (await isPasswordProtected()) {
+                    password = await requestPassword();
+                    if (!password) return;
+                }
+
+                const response = await fetch("/block", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ website, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire("Success", "Website blocked successfully!", "success");
+                } else {
+                    Swal.fire("Error", data.message, "error");
+                }
+            }
+
+            async function unblockWebsite() {
+                const website = document.getElementById("website-url").value.trim();
+                if (!website || !isValidURL(website)) {
+                    Swal.fire("Error", "Please enter a valid website URL.", "error");
+                    return;
+                }
+
+                let password = "";
+                if (await isPasswordProtected()) {
+                    password = await requestPassword();
+                    if (!password) return;
+                }
+
+                const response = await fetch("/unblock", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ website, password })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    Swal.fire("Success", "Website unblocked successfully!", "success");
+                } else {
+                    Swal.fire("Error", data.message, "error");
+                }
+            }
+
+            blockBtn.addEventListener("click", blockWebsite);
+            unblockBtn.addEventListener("click", unblockWebsite);
+        });
     </script>
 </head>
 <body>
     <div class="dashboard">
-        <!-- Sidebar -->
         <header>
             <div class="menu-toggle" id="menu-toggle">
                 <img src="{{ url_for('static', filename='images/menutoggle.png') }}" alt="Menu Toggle">
-          
             </div>
-         </header>
+        </header>
         <nav class="sidebar">
             <ul class="menu">
                 <li><a href="{{ url_for('auth.success')}}" class="active">Home</a></li>
-                <li><a href="{{ url_for('auth.categories')}}">Categories</a></li>
-                <li><a href="{{ url_for('auth.favourites')}}">Favourites</a></li>
+                <li><a href="{{ url_for('auth.categories') }}">Categories</a></li>
+                <li><a href="{{ url_for('auth.favourites') }}">Favourites</a></li>
                 <li><a href="">Multi-Factor Authentication</a></li>
-                <li><a href="">Password Protection</a></li>
+                <li><a href="{{ url_for('auth.password_protection') }}">Password Protection</a></li>
             </ul>
         </nav>
-     
-        <!-- Main Content -->
         <div class="main-content">
             <header class="topic">
                 <h1>Website Blocker</h1>
                 <div>
                     {% if session.get('user_id') %}
                         <span class="welcome-text">Welcome, {{ session.get('user_name')}}!</span>
-                        
                         <a href="{{ url_for('auth.signout') }}" class="signout">Sign Out</a>
                     {% else %}
                         <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
@@ -69,16 +151,11 @@
                 </form>
                 <div id="blocked-websites">
                     <h2>Blocked Websites:</h2>
-                    <ul id="blocked-list">
-                        
-                    </ul>
+                    <ul id="blocked-list"></ul>
                 </div>
             </section>
-            
         </div>
     </div>
-
-    <!-- Include JavaScript -->
     <script src="/static/js/app.js?v=2"></script>
     <script src="/static/js/script.js?v=2"></script>
 </body>
