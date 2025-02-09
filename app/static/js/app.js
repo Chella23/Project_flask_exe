@@ -12,57 +12,154 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
+document.addEventListener("DOMContentLoaded", function () {
+    const blockBtn = document.getElementById("block-btn");
+    const unblockBtn = document.getElementById("unblock-btn");
 
-
-document.getElementById('block-btn').addEventListener('click', async () => {
-    const websiteUrl = document.getElementById('website-url').value.trim();
-
-    if (!websiteUrl) {
-        alert("Please enter a website URL.");
-        return;
+    function isValidURL(url) {
+        const regex = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}(:\d+)?(\/.*)?$/;
+        return regex.test(url);
     }
 
-    try {
-        const response = await fetch('/block', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+    async function isPasswordProtected() {
+        try {
+            const response = await fetch("/get_protection_status");
+            const data = await response.json();
+            return data.enabled;
+        } catch (error) {
+            console.error("Error fetching password protection status:", error);
+            return false;
+        }
+    }
+
+    async function requestPassword() {
+        const { value: password } = await Swal.fire({
+            title: "Enter Password",
+            input: "password",
+            inputPlaceholder: "Enter your password",
+            inputAttributes: { autocapitalize: "off" },
+            showCancelButton: true,
+            confirmButtonText: "Submit",
+            preConfirm: (password) => {
+                if (!password) {
+                    Swal.showValidationMessage("Password is required");
+                }
+                return password;
             },
-            body: JSON.stringify({ website_url: websiteUrl }),
         });
-
-        const result = await response.json();
-        alert(result.message);
-    } catch (error) {
-        console.error('Error blocking the website:', error);
-        alert('An error occurred. Please try again.');
+        return password;
     }
+
+    async function blockWebsite() {
+        const websiteInput = document.getElementById("website-url").value.trim();
+        if (!websiteInput) {
+            Swal.fire("Error", "Please enter at least one website URL.", "error");
+            return;
+        }
+
+        // Split websites by newline and filter valid URLs
+        const websites = websiteInput.split("\n").map(url => url.trim()).filter(url => isValidURL(url));
+
+        if (websites.length === 0) {
+            Swal.fire("Error", "Please enter valid website URLs.", "error");
+            return;
+        }
+
+        let password = "";
+        if (await isPasswordProtected()) {
+            password = await requestPassword();
+            if (!password) return;
+        }
+
+        // Send all websites in one request
+        try {
+            const response = await fetch("/block", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ websites, password }) // Send all at once
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire("Success", "Websites blocked successfully!", "success");
+                updateBlockedList();
+            } else {
+                Swal.fire("Error", data.message, "error");
+            }
+        } catch (error) {
+            console.error("Error blocking websites:", error);
+            Swal.fire("Error", "An error occurred while blocking the websites.", "error");
+        }
+    }
+
+    async function unblockWebsite() {
+        const websiteInput = document.getElementById("website-url").value.trim();
+        if (!websiteInput) {
+            Swal.fire("Error", "Please enter at least one website URL.", "error");
+            return;
+        }
+
+        const websites = websiteInput.split("\n").map(url => url.trim()).filter(url => isValidURL(url));
+
+        if (websites.length === 0) {
+            Swal.fire("Error", "Please enter valid website URLs.", "error");
+            return;
+        }
+
+        let password = "";
+        if (await isPasswordProtected()) {
+            password = await requestPassword();
+            if (!password) return;
+        }
+
+        try {
+            const response = await fetch("/unblock", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ websites, password }) // Send all at once
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                Swal.fire("Success", "Websites unblocked successfully!", "success");
+                updateBlockedList();
+            } else {
+                Swal.fire("Error", data.message, "error");
+            }
+        } catch (error) {
+            console.error("Error unblocking websites:", error);
+            Swal.fire("Error", "An error occurred while unblocking the websites.", "error");
+        }
+    }
+
+    async function fetchBlockedWebsites() {
+        try {
+            const response = await fetch("/blocked_websites");
+            return await response.json();
+        } catch (error) {
+            console.error("Error fetching blocked websites:", error);
+            return [];
+        }
+    }
+
+    async function updateBlockedList() {
+        const blockedList = document.getElementById("blocked-list");
+        blockedList.innerHTML = "";
+
+        const blockedWebsites = await fetchBlockedWebsites();
+        blockedWebsites.forEach(website => {
+            const li = document.createElement("li");
+            li.textContent = website;
+            blockedList.appendChild(li);
+        });
+    }
+
+    blockBtn.addEventListener("click", blockWebsite);
+    unblockBtn.addEventListener("click", unblockWebsite);
+
+    updateBlockedList();
 });
 
-document.getElementById('unblock-btn').addEventListener('click', async () => {
-    const websiteUrl = document.getElementById('website-url').value.trim();
-
-    if (!websiteUrl) {
-        alert("Please enter a website URL.");
-        return;
-    }
-
-    try {
-        const response = await fetch('/unblock', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ website_url: websiteUrl }),
-        });
-
-        const result = await response.json();
-        alert(result.message);
-    } catch (error) {
-        console.error('Error unblocking the website:', error);
-        alert('An error occurred. Please try again.');
-    }
-});
 
 
 document.addEventListener("DOMContentLoaded", () => {

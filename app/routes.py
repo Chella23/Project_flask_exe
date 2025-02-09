@@ -15,7 +15,7 @@ from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
-from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite
+from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection
 from sqlalchemy.orm import joinedload
 
 
@@ -129,54 +129,112 @@ def verify_otp():
         return jsonify({"success": True, "message": Constants.OTP_VERIFIED})
 
     return jsonify({"error": Constants.INCORRECT_EXPIRED_OTP}), 400
+# -------------------------
+# Block/Unblock Website Updates
+# -------------------------
+
 @auth_bp.route('/block', methods=[Methods.POST])
 def block_site():
-    data = request.get_json()
-    print(f"Received data: {data}")  # Debugging print
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
 
+    user_id = session["user_id"]
+    data = request.get_json()
     if not data:
         return jsonify({"success": False, "message": "Invalid request format"}), 400
 
     password = data.get("password")
-    
-    # ✅ Check for both 'website' and 'website_url'
-    website_url = data.get("website_url") or data.get("website")
-    if website_url:
+    website_urls = data.get("websites") or []  # Expecting a list of URLs
+
+    if isinstance(website_urls, str):  
+        website_urls = [website_urls.strip()]  # Convert single string to list
+
+    user_password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
+
+    if user_password_entry and user_password_entry.enabled:
+        if not password or not checkpw(password.encode("utf-8"), user_password_entry.password.encode("utf-8")):
+            return jsonify({"success": False, "message": "Incorrect password"}), 400
+
+    blocked_websites = []
+    failed_websites = []
+
+    for website_url in website_urls:
         website_url = website_url.strip()
 
+        if not website_url or "." not in website_url:  
+            failed_websites.append(website_url)  # Mark invalid URLs as failed
+            continue  # Skip blocking
 
-    if password_store["enabled"] and password != password_store["password"]:
-        return jsonify({"success": False, "message": "Incorrect password"}), 400
+        success = block_website(website_url)
+        if success:
+            blocked_websites.append(website_url)
+        else:
+            failed_websites.append(website_url)
 
-    if not website_url or "." not in website_url:
-        print("Website URL validation failed")  # Debugging print
-        return jsonify({"success": False, "message": "Invalid website URL"}), 400
+    if blocked_websites:
+        return jsonify({
+            "success": True,
+            "message": f"Websites blocked successfully: {', '.join(blocked_websites)}",
+            "failed": failed_websites
+        })
+    
+    return jsonify({
+        "success": False,
+        "message": "No valid websites were blocked.",
+        "failed": failed_websites
+    })
 
-    success = block_website(website_url)
-    return jsonify({"success": success, "action": "block", "website_url": website_url})
 
 @auth_bp.route('/unblock', methods=[Methods.POST])
 def unblock_site():
+    if 'user_id' not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+
+    user_id = session["user_id"]
     data = request.get_json()
     if not data:
         return jsonify({"success": False, "message": "Invalid request format"}), 400
 
     password = data.get("password")
-    # ✅ Check for both 'website' and 'website_url'
-    website_url = data.get("website_url") or data.get("website")
-    if website_url:
+    website_urls = data.get("websites") or []  # Expecting a list of URLs
+
+    if isinstance(website_urls, str):  
+        website_urls = [website_urls.strip()]  # Convert single string to list
+
+    user_password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
+
+    if user_password_entry and user_password_entry.enabled:
+        if not password or not checkpw(password.encode("utf-8"), user_password_entry.password.encode("utf-8")):
+            return jsonify({"success": False, "message": "Incorrect password"}), 400
+
+    unblocked_websites = []
+    failed_websites = []
+
+    for website_url in website_urls:
         website_url = website_url.strip()
-    # Step 1: Validate password first
-    if password_store["enabled"] and password != password_store["password"]:
-        return jsonify({"success": False, "message": "Incorrect password"}), 400
 
-    # Step 2: Validate website URL only if password is correct
-    if not website_url or "." not in website_url:
-        return jsonify({"success": False, "message": "Invalid website URL"}), 400
+        if not website_url or "." not in website_url:  
+            failed_websites.append(website_url)  # Mark invalid URLs as failed
+            continue  # Skip unblocking
 
-    # Step 3: Attempt to unblock the website
-    success = unblock_website(website_url)
-    return jsonify({"success": success, "action": "unblock", "website_url": website_url})
+        success = unblock_website(website_url)
+        if success:
+            unblocked_websites.append(website_url)
+        else:
+            failed_websites.append(website_url)
+
+    if unblocked_websites:
+        return jsonify({
+            "success": True,
+            "message": f"Websites unblocked successfully: {', '.join(unblocked_websites)}",
+            "failed": failed_websites
+        })
+    
+    return jsonify({
+        "success": False,
+        "message": "No valid websites were unblocked.",
+        "failed": failed_websites
+    })
 
 # -------------------------
 # Categories Route
@@ -418,30 +476,80 @@ def toggle_website_favorite(category_id, category_type):
 
 
 
-password_store = {"enabled": False, "password": None}  # Global password storage
+# -------------------------
+# Password Protection Routes
+# -------------------------
 
 @auth_bp.route("/set_password", methods=["POST"])
 def set_password():
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+    
+    user_id = session["user_id"]
     data = request.json
-    password_store["password"] = data["password"]
-    return jsonify({"message": "Password set successfully"})
+    password = data.get("password")
+
+    if not password:
+        return jsonify({"success": False, "message": "Password is required"}), 400
+
+    hashed_password = hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
+    
+    existing_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
+    if existing_entry:
+        existing_entry.password = hashed_password
+    else:
+        new_entry = PasswordProtection(user_id=user_id, password=hashed_password, enabled=False)
+        db.session.add(new_entry)
+    
+    db.session.commit()
+    return jsonify({"success": True, "message": "Password set successfully"})
 
 @auth_bp.route("/enable_protection", methods=["POST"])
 def enable_protection():
-    password_store["enabled"] = True
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+    
+    user_id = session["user_id"]
+    entry = PasswordProtection.query.filter_by(user_id=user_id).first()
+    
+    if not entry:
+        return jsonify({"success": False, "message": "Set a password first"}), 400
+    
+    entry.enabled = True
+    db.session.commit()
     return jsonify({"success": True})
 
 @auth_bp.route("/disable_protection", methods=["POST"])
 def disable_protection():
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+
+    user_id = session["user_id"]
     data = request.json
-    if password_store["password"] and data["password"] == password_store["password"]:
-        password_store["enabled"] = False
-        return jsonify({"success": True})
-    return jsonify({"success": False, "message": "Incorrect password"})
+    password = data.get("password")
+
+    entry = PasswordProtection.query.filter_by(user_id=user_id).first()
+    
+    if not entry or not checkpw(password.encode("utf-8"), entry.password.encode("utf-8")):
+        return jsonify({"success": False, "message": "Incorrect password"}), 400
+
+    entry.enabled = False
+    db.session.commit()
+    return jsonify({"success": True})
 
 @auth_bp.route("/get_protection_status", methods=["GET"])
 def get_protection_status():
-    return jsonify({"enabled": password_store["enabled"]})
+    user_id = session.get("user_id")
+    if not user_id:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+
+    password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
+    is_password_set = password_entry is not None and password_entry.password is not None
+
+    return jsonify({
+        "enabled": password_entry.enabled if password_entry else False,
+        "password_set": is_password_set
+    })
 
 @auth_bp.route("/password_protection", methods=["GET"])
 def password_protection():

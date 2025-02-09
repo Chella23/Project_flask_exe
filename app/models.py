@@ -51,6 +51,16 @@ class CustomWebsite(db.Model):
     name = db.Column(db.String(100), nullable=False)
     url = db.Column(db.String(255), nullable=False, unique=True)
 
+
+
+class PasswordProtection(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    enabled = db.Column(db.Boolean, default=False)
+    user = db.relationship('User', backref=db.backref('password_protection', uselist=False))
+
+
 # -------------------------
 # Favorite Categories
 # -------------------------

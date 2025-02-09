@@ -6,6 +6,9 @@
     <title>Website Blocker Dashboard</title>
     <link rel="stylesheet" href="/static/css/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+    
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -19,96 +22,8 @@
             });
         });
 
-        document.addEventListener("DOMContentLoaded", function () {
-            const blockBtn = document.getElementById("block-btn");
-            const unblockBtn = document.getElementById("unblock-btn");
 
-            function isValidURL(url) {
-                const regex = /^(https?:\/\/)?(www\.)?[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-                return regex.test(url);
-            }
 
-            async function isPasswordProtected() {
-                const response = await fetch("/get_protection_status");
-                const data = await response.json();
-                return data.enabled;
-            }
-
-            async function requestPassword() {
-                const { value: password } = await Swal.fire({
-                    title: "Enter Password",
-                    input: "password",
-                    inputPlaceholder: "Enter your password",
-                    inputAttributes: { autocapitalize: "off" },
-                    showCancelButton: true,
-                    confirmButtonText: "Submit",
-                    preConfirm: (password) => {
-                        if (!password) {
-                            Swal.showValidationMessage("Password is required");
-                        }
-                        return password;
-                    },
-                });
-                return password;
-            }
-
-            async function blockWebsite() {
-                const website = document.getElementById("website-url").value.trim();
-                if (!website || !isValidURL(website)) {
-                    Swal.fire("Error", "Please enter a valid website URL.", "error");
-                    return;
-                }
-
-                let password = "";
-                if (await isPasswordProtected()) {
-                    password = await requestPassword();
-                    if (!password) return;
-                }
-
-                const response = await fetch("/block", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ website, password })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    Swal.fire("Success", "Website blocked successfully!", "success");
-                } else {
-                    Swal.fire("Error", data.message, "error");
-                }
-            }
-
-            async function unblockWebsite() {
-                const website = document.getElementById("website-url").value.trim();
-                if (!website || !isValidURL(website)) {
-                    Swal.fire("Error", "Please enter a valid website URL.", "error");
-                    return;
-                }
-
-                let password = "";
-                if (await isPasswordProtected()) {
-                    password = await requestPassword();
-                    if (!password) return;
-                }
-
-                const response = await fetch("/unblock", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ website, password })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    Swal.fire("Success", "Website unblocked successfully!", "success");
-                } else {
-                    Swal.fire("Error", data.message, "error");
-                }
-            }
-
-            blockBtn.addEventListener("click", blockWebsite);
-            unblockBtn.addEventListener("click", unblockWebsite);
-        });
     </script>
 </head>
 <body>
@@ -120,11 +35,11 @@
         </header>
         <nav class="sidebar">
             <ul class="menu">
-                <li><a href="{{ url_for('auth.success')}}" class="active">Home</a></li>
-                <li><a href="{{ url_for('auth.categories') }}">Categories</a></li>
-                <li><a href="{{ url_for('auth.favourites') }}">Favourites</a></li>
-                <li><a href="">Multi-Factor Authentication</a></li>
-                <li><a href="{{ url_for('auth.password_protection') }}">Password Protection</a></li>
+                <li><a href="{{ url_for('auth.success')}}" class="active"> <i class="bi bi-house"></i><span>Home</span></a></li>
+                <li><a href="{{ url_for('auth.categories') }}"><i class="bi bi-grid"></i><span>Categories</span></a></li>
+                <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a></li>
+                <li><a href=""><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
+                <li><a href="{{ url_for('auth.password_protection') }}"> <i class="bi bi-lock"></i><span>Password Protection</span></a></li>
             </ul>
         </nav>
         <div class="main-content">

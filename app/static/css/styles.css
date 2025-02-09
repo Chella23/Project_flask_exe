@@ -73,7 +73,7 @@
     border-radius: 12px;
     font-size: 16px;
     font-weight: bold;
-    text-align: center;
+    text-align:justify;
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
@@ -89,6 +89,8 @@
 .sidebar .menu a:active {
     transform: translateY(0);
 }
+
+
 
 /* Menu Toggle */
 .menu-toggle img {
@@ -247,6 +249,65 @@
         padding: 8px;
     }
 }
+/* Sidebar Menu Styles */
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sidebar ul li {
+    margin-bottom: 10px; /* Adds spacing between items */
+}
+
+/* Sidebar Links */
+.sidebar ul li a {
+    display: flex;
+    align-items: flex-start; /* Aligns text and icon at the top */
+    justify-content: flex-start;
+    padding: 12px 15px;
+    text-decoration: none;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1.4; /* Adjusts line height for better readability */
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    padding-left: 40px; /* Reserves space for the icon */
+}
+
+/* Hanging Indentation Effect */
+.sidebar ul li a span {
+    display: block;
+
+    padding-left: 25px; /* Aligns second line under the first word */
+    max-width: 200px; /* Ensures proper text wrapping */
+    margin-left: 10px;
+}
+
+/* Sidebar Icon Styling */
+.sidebar ul li a i {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    padding-right: 10px;
+}
+
+/* Hover Effects */
+.sidebar ul li a:hover {
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
+}
+
+.sidebar ul li a:active {
+    transform: translateY(0);
+}
 
 /* Link Styling */
 a {
@@ -262,6 +323,7 @@ a {
     font-size: 16px;
     font-weight: bold;
     text-align: center;
+    
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
@@ -276,7 +338,6 @@ a:hover {
 a:active {
     transform: translateY(0);
 }
-
 .button-group {
     display: flex;
     gap: 10px;
@@ -573,3 +634,4 @@ a:active {
 #blocked-list li button:hover {
     background: linear-gradient(135deg, #50E3C2, #9013FE, #4A90E2);
 }
+

@@ -6,6 +6,7 @@
   <title>Favorites - Website Blocker Dashboard</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
@@ -148,12 +149,12 @@ function performAction(action, password = null) {
     </header>
     <nav class="sidebar">
       <ul class="menu">
-        <li><a href="{{ url_for('auth.success') }}">Home</a></li>
-        <li><a href="{{ url_for('auth.categories') }}">Categories</a></li>
-        <li><a href="{{ url_for('auth.favourites') }}" class="active">Favourites</a></li>
-        <li><a href="#">Multi-Factor Authentication</a></li>
-        <li><a href="{{ url_for('auth.password_protection')}}">Password Protection</a></li>
-      </ul>
+        <li><a href="{{ url_for('auth.success')}}" > <i class="bi bi-house"></i><span>Home</span></a></li>
+        <li><a href="{{ url_for('auth.categories') }}"><i class="bi bi-grid"></i><span>Categories</span></a></li>
+        <li><a href="{{ url_for('auth.favourites') }}" class="active"><i class="bi bi-star"></i><span>Favourites</span></a></li>
+        <li><a href=""><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
+        <li><a href="{{ url_for('auth.password_protection') }}"> <i class="bi bi-lock"></i><span>Password Protection</span></a></li>
+    </ul>
     </nav>
     
     <!-- Main Content -->
