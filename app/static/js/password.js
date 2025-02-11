@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", async function () {
     const passwordInput = document.getElementById("password-input");
     const savePasswordBtn = document.getElementById("save-password-btn");
@@ -6,16 +5,16 @@ document.addEventListener("DOMContentLoaded", async function () {
     const toggleStatus = document.getElementById("toggle-status");
     const forgotPasswordLink = document.getElementById("forgot-password");
 
-    let isPasswordSet = false;
+    let isPasswordSet = false; // Whether a password is already saved
     let failedAttempts = 0;
     const MAX_ATTEMPTS = 3;
-    const LOCKOUT_TIME = 30 * 1000; // 30 seconds
+    const LOCKOUT_TIME = 30 * 1000; // 30 seconds cooldown
 
+    // Load protection status from the backend
     async function loadProtectionStatus() {
         try {
             const response = await fetch("/get_protection_status");
             const data = await response.json();
-
             passwordToggle.checked = data.enabled;
             toggleStatus.textContent = `Password Protection: ${data.enabled ? "ON" : "OFF"}`;
             isPasswordSet = data.password_set; // Assumes backend returns a flag "password_set"
@@ -36,17 +35,13 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     await loadProtectionStatus();
 
+    // Validate password strength: at least 8 characters, one lowercase, one uppercase, one digit, and one special character.
     function validatePasswordStrength(password) {
-            // Explanation:
-        // (?=.*[a-z])  → Ensure at least one lowercase letter.
-        // (?=.*[A-Z])  → Ensure at least one uppercase letter.
-        // (?=.*\d)     → Ensure at least one digit.
-        // (?=.*[\W_])  → Ensure at least one special character (any non-word character or underscore).
-        // .{8,}        → Ensure the password is at least 8 characters long (no maximum limit).
         const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
         return regex.test(password);
     }
 
+    // Show a visual indicator of password strength
     function showPasswordStrengthIndicator(password) {
         const strengthBar = document.getElementById("password-strength");
         const strengthText = document.getElementById("password-strength-text");
@@ -56,9 +51,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         if (/[A-Z]/.test(password)) strength++;
         if (/[a-z]/.test(password)) strength++;
         if (/\d/.test(password)) strength++;
-        if (/[@$!%*?&]/.test(password)) strength++;
+        if (/[\W_]/.test(password)) strength++;
 
-        // Calculate percentage (max strength is 5)
         const percentage = (strength / 5) * 100;
         strengthBar.style.width = `${percentage}%`;
 
@@ -77,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     }
 
-    // Monitor password input changes for strength feedback
+    // Monitor input changes for real‑time feedback on password strength
     passwordInput.addEventListener("input", function () {
         showPasswordStrengthIndicator(passwordInput.value);
     });
@@ -90,7 +84,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }, LOCKOUT_TIME);
     }
 
-    // Save Password button action
+    // Save password when the save button is clicked
     savePasswordBtn.addEventListener("click", async function () {
         const password = passwordInput.value.trim();
         if (!password) {
@@ -98,7 +92,11 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
         if (!validatePasswordStrength(password)) {
-            Swal.fire("Error", "Password must be at least 8 characters long, contain an uppercase letter, a lowercase letter, a number, and a special character.", "error");
+            Swal.fire(
+                "Error",
+                "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character.",
+                "error"
+            );
             return;
         }
         try {
@@ -110,6 +108,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             const data = await response.json();
             if (data.success) {
                 Swal.fire("Success", "Password saved successfully!", "success");
+                // Do not clear the saved password from the backend when saving.
                 passwordInput.value = "";
                 passwordInput.placeholder = "Password Already Set";
                 passwordInput.disabled = true;
@@ -123,18 +122,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
     });
 
-    // Toggle Password Protection
+    // Toggle password protection
     passwordToggle.addEventListener("change", function () {
         if (!passwordToggle.checked) {
-            // If turning off protection
-            if (!isPasswordSet) {
-                // If no password is set, disable directly
-                fetch("/disable_protection", { method: "POST" })
-                    .then(response => response.json())
-                    .then(() => {
-                        toggleStatus.textContent = "Password Protection: OFF";
-                    });
-            } else {
+            // When turning OFF protection:
+            if (isPasswordSet) {
                 if (failedAttempts >= MAX_ATTEMPTS) {
                     Swal.fire("Too Many Attempts", "Please try again later.", "error");
                     lockout();
@@ -152,29 +144,38 @@ document.addEventListener("DOMContentLoaded", async function () {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ password: result.value })
                         })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    toggleStatus.textContent = "Password Protection: OFF";
-                                    isPasswordSet = false;
-                                    // Allow re-entering a new password if needed
-                                    passwordInput.disabled = false;
-                                    savePasswordBtn.disabled = false;
-                                    passwordInput.placeholder = "Enter password";
-                                } else {
-                                    failedAttempts++;
-                                    passwordToggle.checked = true;
-                                    Swal.fire("Error", "Incorrect password", "error");
-                                    if (failedAttempts >= MAX_ATTEMPTS) lockout();
-                                }
-                            });
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                toggleStatus.textContent = "Password Protection: OFF";
+                                // Delete the stored password so that enabling protection later will require a new password.
+                                isPasswordSet = false;
+                                passwordInput.disabled = false;
+                                savePasswordBtn.disabled = false;
+                                passwordInput.placeholder = "Enter password";
+                                passwordToggle.checked = false;
+                            } else {
+                                failedAttempts++;
+                                passwordToggle.checked = true;
+                                Swal.fire("Error", "Incorrect password", "error");
+                                if (failedAttempts >= MAX_ATTEMPTS) lockout();
+                            }
+                        });
                     } else {
                         passwordToggle.checked = true;
                     }
                 });
+            } else {
+                // If no password is set, disable protection directly (should normally not occur because protection is off)
+                fetch("/disable_protection", { method: "POST" })
+                    .then(response => response.json())
+                    .then(() => {
+                        toggleStatus.textContent = "Password Protection: OFF";
+                        passwordToggle.checked = false;
+                    });
             }
         } else {
-            // Enabling protection
+            // Enabling protection: if no password is set, prompt to set one.
             if (!isPasswordSet) {
                 Swal.fire({
                     title: "Set a Password to Enable Protection",
@@ -184,7 +185,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                     preConfirm: (password) => {
                         if (!validatePasswordStrength(password)) {
                             Swal.showValidationMessage(
-                                "Password must be at least 8 characters long, contain an uppercase letter, a lowercase letter, a number, and a special character."
+                                "Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one digit, and one special character."
                             );
                         }
                         return password;
@@ -196,36 +197,39 @@ document.addEventListener("DOMContentLoaded", async function () {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ password: result.value })
                         })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    Swal.fire("Success", "Password saved! Protection enabled.", "success");
-                                    isPasswordSet = true;
-                                    toggleStatus.textContent = "Password Protection: ON";
-                                    fetch("/enable_protection", { method: "POST" });
-                                    passwordInput.disabled = true;
-                                    savePasswordBtn.disabled = true;
-                                    passwordInput.placeholder = "Password Already Set";
-                                } else {
-                                    Swal.fire("Error", data.message, "error");
-                                    passwordToggle.checked = false;
-                                }
-                            });
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                Swal.fire("Success", "Password saved! Protection enabled.", "success");
+                                isPasswordSet = true;
+                                toggleStatus.textContent = "Password Protection: ON";
+                                fetch("/enable_protection", { method: "POST" });
+                                passwordToggle.checked = true;
+                                // Disable the password input since a password is now set.
+                                passwordInput.disabled = true;
+                                savePasswordBtn.disabled = true;
+                                passwordInput.placeholder = "Password Already Set";
+                            } else {
+                                Swal.fire("Error", data.message, "error");
+                                passwordToggle.checked = false;
+                            }
+                        });
                     } else {
                         passwordToggle.checked = false;
                     }
                 });
             } else {
+                // If a password already exists, simply enable protection.
                 fetch("/enable_protection", { method: "POST" }).then(() => {
                     toggleStatus.textContent = "Password Protection: ON";
+                    passwordToggle.checked = true;
                 });
             }
         }
     });
 
-    // Optionally add a "Forgot Password?" feature.
-    document.getElementById("forgot-password")?.addEventListener("click", function () {
+    // "Forgot Password?" functionality (stub: can be extended)
+    forgotPasswordLink?.addEventListener("click", function () {
         Swal.fire("Forgot Password", "Please contact support to reset your password.", "info");
     });
 });
-

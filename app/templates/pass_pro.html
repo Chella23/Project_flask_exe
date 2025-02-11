@@ -1,163 +1,152 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Protection Setup - Website Blocker Dashboard</title>
-  <link rel="stylesheet" href="/static/css/styles.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <style>
-    /* Container for password protection setup */
-    .container {
-      background: #fff;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      max-width: 500px;
-      margin: 50px auto;
-    }
-
-    .container h1 {
-      font-size: 22px;
-      margin-bottom: 15px;
-    }
-
-    /* Form Styling */
-    #password-setup-form {
-      margin-top: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    #password-input {
-      width: 80%;
-      padding: 10px;
-      border: 2px solid #007bff;
-      border-radius: 8px;
-      font-size: 16px;
-      outline: none;
-      margin-bottom: 10px;
-    }
-
-    #password-input:focus {
-      border-color: #0056b3;
-    }
-
-    /* Save Password Button */
-    #save-password-btn {
-      background: #007bff;
-      color: white;
-      font-size: 16px;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: 0.3s;
-      margin-bottom: 10px;
-    }
-
-    #save-password-btn:hover {
-      background: #0056b3;
-    }
-
-    /* Password Strength Indicator */
-    #strength-container {
-      width: 80%;
-      background: #e0e0e0;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-bottom: 15px;
-      height: 8px;
-    }
-
-    #password-strength {
-      height: 100%;
-      width: 0%;
-      background-color: red;
-      transition: width 0.3s, background-color 0.3s;
-    }
-
-    #password-strength-text {
-      font-size: 14px;
-      margin-top: 5px;
-      color: #333;
-    }
-
-    /* Toggle Switch Container */
-    .toggle-container {
-      margin-top: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    /* Toggle Switch */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 50px;
-      height: 25px;
-    }
-
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 25px;
-    }
-
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 4px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-
-    input:checked + .slider {
-      background-color: #007bff;
-    }
-
-    input:checked + .slider:before {
-      transform: translateX(24px);
-    }
-
-    /* Toggle Status Text */
-    #toggle-status {
-      font-size: 16px;
-      font-weight: bold;
-      color: #333;
-    }
-
-    /* Forgot Password Link */
-    #forgot-password {
-      display: block;
-      margin-top: 15px;
-      font-size: 14px;
-      color: #007bff;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Protection Setup - Website Blocker Dashboard</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        .topic h1 {
+            font-size: 24px;
+            margin: 0;
+        }
+        .welcome-text {
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        /* Password Protection Container */
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            margin: auto;
+            margin-top: 50px;
+        }
+        .container h1 {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+        /* Form Styling */
+        #password-setup-form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #password-input {
+            width: 80%;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            font-size: 16px;
+            outline: none;
+            margin-bottom: 15px;
+        }
+        #password-input:focus {
+            border-color: #0056b3;
+        }
+        /* Save Password Button */
+        #save-password-btn {
+            background: #007bff;
+            color: white;
+            font-size: 16px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        #save-password-btn:hover {
+            background: #0056b3;
+        }
+        /* Password Strength Indicator */
+        #password-strength-container {
+            width: 80%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        #password-strength {
+            height: 100%;
+            width: 0;
+            background-color: red;
+            transition: width 0.3s, background-color 0.3s;
+        }
+        #password-strength-text {
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        /* Toggle Switch Container */
+        .toggle-container {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        /* Toggle Switch */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 25px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        /* Toggle Status Text */
+        #toggle-status {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        /* Forgot Password Link */
+        #forgot-password {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard">
@@ -169,14 +158,13 @@
         </header>
         <nav class="sidebar">
             <ul class="menu">
-                <li><a href="{{ url_for('auth.success') }}"> <i class="bi bi-house"></i><span>Home</span></a></li>
+                <li><a href="{{ url_for('auth.success') }}"><i class="bi bi-house"></i><span>Home</span></a></li>
                 <li><a href="{{ url_for('auth.categories') }}"><i class="bi bi-grid"></i><span>Categories</span></a></li>
                 <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a></li>
                 <li><a href=""><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
-                <li><a href="{{ url_for('auth.password_protection') }}" class="active"> <i class="bi bi-lock"></i><span>Password Protection</span></a></li>
+                <li><a href="{{ url_for('auth.password_protection') }}" class="active"><i class="bi bi-lock"></i><span>Password Protection</span></a></li>
             </ul>
         </nav>
-     
         <!-- Main Content -->
         <div class="main-content">
             <header class="topic">
@@ -193,20 +181,17 @@
             </header>
             <div class="container">
                 <h1>Password Protection Setup</h1>
-                <!-- Password Setup Form -->
-                <form id="password-setup-form">
-                    <label for="password-input">Set Password:</label>
-                    <input type="password" id="password-input" placeholder="Enter password">
-                    <div id="strength-container">
-                        <div id="password-strength"></div>
-                    </div>
-                    <div id="password-strength-text"></div>
-                    <button type="button" id="save-password-btn">Save Password</button>
-                </form>
-                <!-- Forgot Password Link (you can customize this action as needed) -->
-                <span id="forgot-password" onclick="Swal.fire('Forgot Password?', 'Please contact support to reset your password.', 'info')">Forgot Password?</span>
-        
-                <!-- Toggle Switch for Enabling/Disabling Password Protection -->
+                <div id="password-setup-area">
+                    <form id="password-setup-form">
+                        <label for="password-input">Set Password:</label>
+                        <input type="password" id="password-input" placeholder="Enter password">
+                        <div id="password-strength-container">
+                            <div id="password-strength"></div>
+                        </div>
+                        <div id="password-strength-text"></div>
+                        <button type="button" id="save-password-btn">Save Password</button>
+                    </form>
+                </div>
                 <div class="toggle-container">
                     <label class="switch">
                         <input type="checkbox" id="password-toggle">
@@ -214,11 +199,13 @@
                     </label>
                     <span id="toggle-status">Password Protection: OFF</span>
                 </div>
+                <div id="forgot-password">Forgot Password?</div>
             </div>
         </div>
     </div>
-
     <!-- Include JavaScript -->
     <script src="/static/js/app.js?v=2"></script>
     <script src="/static/js/script.js?v=2"></script>
-   <script src="/static/js/password.js?v=2"></script>
+    <script src="/static/js/password.js"></script>
+</body>
+</html>

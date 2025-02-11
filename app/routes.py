@@ -484,23 +484,18 @@ def toggle_website_favorite(category_id, category_type):
 def set_password():
     if "user_id" not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
-    
     user_id = session["user_id"]
     data = request.json
     password = data.get("password")
-
     if not password:
         return jsonify({"success": False, "message": "Password is required"}), 400
-
     hashed_password = hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
-    
     existing_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
     if existing_entry:
         existing_entry.password = hashed_password
     else:
         new_entry = PasswordProtection(user_id=user_id, password=hashed_password, enabled=False)
         db.session.add(new_entry)
-    
     db.session.commit()
     return jsonify({"success": True, "message": "Password set successfully"})
 
@@ -508,13 +503,10 @@ def set_password():
 def enable_protection():
     if "user_id" not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
-    
     user_id = session["user_id"]
     entry = PasswordProtection.query.filter_by(user_id=user_id).first()
-    
     if not entry:
         return jsonify({"success": False, "message": "Set a password first"}), 400
-    
     entry.enabled = True
     db.session.commit()
     return jsonify({"success": True})
@@ -523,17 +515,14 @@ def enable_protection():
 def disable_protection():
     if "user_id" not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
-
     user_id = session["user_id"]
     data = request.json
     password = data.get("password")
-
     entry = PasswordProtection.query.filter_by(user_id=user_id).first()
-    
     if not entry or not checkpw(password.encode("utf-8"), entry.password.encode("utf-8")):
         return jsonify({"success": False, "message": "Incorrect password"}), 400
-
-    entry.enabled = False
+    # Delete the stored password to disable protection entirely.
+    db.session.delete(entry)
     db.session.commit()
     return jsonify({"success": True})
 
@@ -542,10 +531,8 @@ def get_protection_status():
     user_id = session.get("user_id")
     if not user_id:
         return jsonify({"success": False, "message": "User not logged in"}), 403
-
     password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
     is_password_set = password_entry is not None and password_entry.password is not None
-
     return jsonify({
         "enabled": password_entry.enabled if password_entry else False,
         "password_set": is_password_set
