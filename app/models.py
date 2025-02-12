@@ -1,3 +1,6 @@
+import datetime
+from datetime import datetime
+
 from flask_sqlalchemy import SQLAlchemy
 from . import db  
 from sqlalchemy import CheckConstraint
@@ -111,3 +114,18 @@ class Favorite(db.Model):
         else:
             cat = self.default_category.title if self.default_category else (self.custom_category.title if self.custom_category else "Unknown")
             return f"<Favorite Category {cat} by User {self.user_id}>"
+
+class ScheduledTask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    website = db.Column(db.String(255), nullable=False)  # This field is NOT NULL
+    task_type = db.Column(db.String(10), nullable=False)
+    run_date = db.Column(db.DateTime, nullable=True)
+    recurring = db.Column(db.Boolean, default=False)
+    day_of_week = db.Column(db.String(20), nullable=True)
+    hour = db.Column(db.Integer, nullable=True)
+    minute = db.Column(db.Integer, nullable=True)
+    active = db.Column(db.Boolean, default=True)
+    job_id = db.Column(db.String(100), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

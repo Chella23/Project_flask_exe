@@ -37,5 +37,7 @@ def create_app():
         db.create_all()
         from .seeds import init_default_categories
         init_default_categories()
-
+    # Initialize the scheduler (import db from extensions instead)
+        from app.utils.task_schedular import init_scheduler
+        init_scheduler(app)
     return app

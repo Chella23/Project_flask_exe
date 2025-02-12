@@ -1,3 +1,4 @@
+import datetime
 from flask import (
     Blueprint,
     jsonify,
@@ -10,12 +11,13 @@ from flask import (
 )
 from flask_mail import Message
 from app.utils.site_blocker import block_website, unblock_website
+from app.utils.task_schedular import add_scheduled_task
 from . import db, mail
 from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
-from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection
+from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask
 from sqlalchemy.orm import joinedload
 
 
@@ -544,3 +546,93 @@ def password_protection():
     Serves the Password Protection setup page.
     """
     return render_template("pass_pro.html")
+
+
+@auth_bp.route("/task_schedular", methods=["GET"])
+def task_schedular():
+    """
+    GET:
+      - If the user is logged in, fetch and display all scheduled tasks.
+      - Render the task scheduler page (task_schedular.html) with the tasks.
+    """
+    if "user_id" not in session:
+        flash("Please sign in to access the Task Scheduler", "error")
+        return redirect(url_for("auth.signin"))
+
+    user_id = session["user_id"]
+    # Query scheduled tasks for the current user.
+    tasks = ScheduledTask.query.filter_by(user_id=user_id).all()
+    return render_template("task_schedular.html", tasks=tasks)
+
+
+@auth_bp.route("/add_task", methods=["POST"])
+def add_task():
+    """
+    POST:
+      - Create scheduled task(s) for the logged-in user.
+      - Expected JSON payload:
+            {
+                "website": "www.example.com",        # The website URL (for a single task)
+                "task_type": "block",                # "block" or "unblock"
+                "recurring": false,                  # Boolean; false for one-time tasks
+                "run_date": "2025-02-10T09:30:00",     # ISO 8601 string (if one-time)
+                "day_of_week": "Mon,Tue,Wed",          # For recurring tasks (optional)
+                "hour": 9,                           # For recurring tasks (optional)
+                "minute": 30                         # For recurring tasks (optional)
+            }
+      - The utility function add_scheduled_task() handles the scheduling logic.
+    """
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"success": False, "message": "Invalid request data"}), 400
+
+    user_id = session["user_id"]
+    website = data.get("website")
+    task_type = data.get("task_type")  # expected "block" or "unblock"
+    recurring = data.get("recurring", False)
+    run_date_str = data.get("run_date")  # for one-time tasks (ISO 8601 format)
+    day_of_week = data.get("day_of_week")  # for recurring tasks (e.g., "Mon,Tue,Wed")
+    hour = data.get("hour")
+    minute = data.get("minute")
+
+    # Convert run_date string to datetime if provided
+    run_date = None
+    if run_date_str:
+        try:
+            run_date = datetime.fromisoformat(run_date_str)
+        except ValueError:
+            return jsonify({"success": False, "message": "Invalid run_date format"}), 400
+
+    try:
+        # Call your utility function to add and schedule the task.
+        task = add_scheduled_task(user_id, website, task_type, run_date, recurring, day_of_week, hour, minute)
+    except Exception as e:
+        return jsonify({"success": False, "message": f"Error scheduling task: {str(e)}"}), 500
+
+    return jsonify({
+        "success": True,
+        "message": "Task added successfully",
+        "task": task.to_dict()  # assuming your ScheduledTask model has a to_dict() method
+    })
+
+
+@auth_bp.route("/delete_task/<int:task_id>", methods=["DELETE"])
+def delete_task(task_id):
+    """
+    DELETE:
+      - Delete a scheduled task by its ID if it belongs to the logged‑in user.
+    """
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+
+    task = ScheduledTask.query.get(task_id)
+    if not task or task.user_id != session["user_id"]:
+        return jsonify({"success": False, "message": "Task not found"}), 404
+
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({"success": True, "message": "Task deleted successfully"})
+

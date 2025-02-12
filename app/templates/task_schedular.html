@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Blocker Dashboard</title>
+  <link rel="stylesheet" href="/static/css/styles.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // Display flash messages (if any)
+    document.addEventListener("DOMContentLoaded", function () {
+      const flashMessages = JSON.parse('{{ get_flashed_messages(with_categories=True) | tojson | safe }}');
+      flashMessages.forEach(([category, message]) => {
+        Swal.fire({
+          icon: category === 'success' ? 'success' : 'error',
+          title: category.charAt(0).toUpperCase() + category.slice(1),
+          text: message,
+        });
+      });
+    });
+  </script>
+  <style>
+    /* Basic Dashboard Styling */
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      position: fixed;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      padding: 20px;
+    }
+    .main-content {
+      margin-left: 250px;
+      padding: 20px;
+    }
+    .topic h1 {
+      font-size: 24px;
+      margin: 0;
+    }
+    .welcome-text {
+      font-size: 16px;
+      margin-right: 10px;
+    }
+    /* Block/Unblock Form */
+    #block-website-form textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+    .button-group {
+      margin-top: 10px;
+    }
+    /* Blocked Websites List */
+    #blocked-websites {
+      margin-top: 30px;
+    }
+    #blocked-websites h2 {
+      margin-bottom: 15px;
+    }
+    #blocked-list {
+      list-style: none;
+      padding-left: 0;
+    }
+    #blocked-list li {
+      padding: 8px 12px;
+      background: #f1f1f1;
+      margin-bottom: 8px;
+      border-radius: 4px;
+    }
+    /* Task Scheduler Section */
+    .scheduler-container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      margin-top: 40px;
+    }
+    .scheduler-container h2 {
+      margin-bottom: 20px;
+    }
+    .form-section {
+      margin-bottom: 30px;
+    }
+    #recurringFields {
+      display: none;
+    }
+    /* Table styling for scheduled tasks */
+    #tasks-table {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <!-- Sidebar -->
+    <header>
+      <div class="menu-toggle" id="menu-toggle">
+        <img src="{{ url_for('static', filename='images/menutoggle.png') }}" alt="Menu Toggle">
+      </div>
+    </header>
+    <nav class="sidebar">
+      <ul class="menu">
+        <li><a href="{{ url_for('auth.success')}}" class="active"><i class="bi bi-house"></i><span>Home</span></a></li>
+        <li><a href="{{ url_for('auth.categories') }}"><i class="bi bi-grid"></i><span>Categories</span></a></li>
+        <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a></li>
+        <li><a href=""><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
+        <li><a href="{{ url_for('auth.password_protection') }}"><i class="bi bi-lock"></i><span>Password Protection</span></a></li>
+        <li><a href="{{ url_for('auth.task_schedular') }}"><i class="bi bi-calendar"></i><span>Task Scheduler</span></a></li>
+  
+    </ul>
+    </nav>
+    <!-- Main Content -->
+    <div class="main-content">
+      <header class="topic d-flex justify-content-between align-items-center">
+        <h1>Website Blocker</h1>
+        <div>
+          {% if session.get('user_id') %}
+            <span class="welcome-text">Welcome, {{ session.get('user_name')}}!</span>
+            <a href="{{ url_for('auth.signout') }}" class="signout btn btn-outline-danger">Sign Out</a>
+          {% else %}
+            <a href="{{ url_for('auth.signin') }}" class="signin btn btn-outline-primary">Sign In</a>
+            <a href="{{ url_for('auth.signup') }}" class="signup btn btn-outline-success">Sign Up</a>
+          {% endif %}
+        </div>
+      </header>
+      <section id="content">
+        <!-- Block/Unblock Section -->
+        <form id="block-website-form" class="mb-4">
+          <div class="mb-3">
+            <label for="website-url" class="form-label">Enter Website URL(s):</label>
+            <textarea class="form-control" id="website-url" placeholder="Enter one or more website URLs, each on a new line" rows="3"></textarea>
+          </div>
+          <div class="button-group">
+            <button type="button" id="block-btn" class="btn btn-primary me-2">Block</button>
+            <button type="button" id="unblock-btn" class="btn btn-secondary">Unblock</button>
+          </div>
+        </form>
+        <div id="blocked-websites" class="mb-4">
+          <h2>Blocked Websites:</h2>
+          <ul id="blocked-list" class="list-group"></ul>
+        </div>
+        <!-- Task Scheduler Section -->
+        <div class="scheduler-container">
+          <h2 class="text-center">Task Scheduler</h2>
+          <form id="task-scheduler-form" class="form-section">
+            <div class="mb-3">
+              <label for="scheduler-website" class="form-label">Website URL</label>
+              <input type="text" class="form-control" id="scheduler-website" placeholder="e.g. www.example.com" required>
+            </div>
+            <div class="mb-3">
+              <label for="task-type" class="form-label">Task Type</label>
+              <select class="form-select" id="task-type" required>
+                <option value="block" selected>Block</option>
+                <option value="unblock">Unblock</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Schedule Type</label>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="scheduleType" id="oneTime" value="one-time" checked>
+                <label class="form-check-label" for="oneTime">One-Time</label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="radio" name="scheduleType" id="recurring" value="recurring">
+                <label class="form-check-label" for="recurring">Recurring</label>
+              </div>
+            </div>
+            <div id="oneTimeFields" class="mb-3">
+              <label for="run-date" class="form-label">Run Date and Time</label>
+              <input type="datetime-local" class="form-control" id="run-date">
+            </div>
+            <div id="recurringFields" class="mb-3" style="display:none;">
+              <div class="mb-3">
+                <label for="day-of-week" class="form-label">Day(s) of Week</label>
+                <input type="text" class="form-control" id="day-of-week" placeholder="e.g. mon,tue,wed">
+              </div>
+              <div class="mb-3">
+                <label for="hour" class="form-label">Hour (0-23)</label>
+                <input type="number" class="form-control" id="hour" min="0" max="23">
+              </div>
+              <div class="mb-3">
+                <label for="minute" class="form-label">Minute (0-59)</label>
+                <input type="number" class="form-control" id="minute" min="0" max="59">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-success">Schedule Task</button>
+          </form>
+          <h3 class="mt-4">Scheduled Tasks</h3>
+          <table class="table table-striped" id="tasks-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Website</th>
+                <th>Task Type</th>
+                <th>Schedule</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-table-body">
+              <!-- Tasks will be populated here via JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+  <!-- Include JavaScript -->
+  <script src="/static/js/app.js?v=2"></script>
+  <script src="/static/js/script.js?v=2"></script>
+  <script>
+    // Task Scheduler JS Code
+    document.addEventListener("DOMContentLoaded", function() {
+      const taskForm = document.getElementById("task-scheduler-form");
+      const oneTimeFields = document.getElementById("oneTimeFields");
+      const recurringFields = document.getElementById("recurringFields");
+      const scheduleTypeRadios = document.getElementsByName("scheduleType");
+      const tasksTableBody = document.getElementById("tasks-table-body");
+
+      scheduleTypeRadios.forEach(radio => {
+        radio.addEventListener("change", function() {
+          if (this.value === "one-time") {
+            oneTimeFields.style.display = "block";
+            recurringFields.style.display = "none";
+          } else {
+            oneTimeFields.style.display = "none";
+            recurringFields.style.display = "block";
+          }
+        });
+      });
+
+      taskForm.addEventListener("submit", async function(e) {
+        e.preventDefault();
+        const website = document.getElementById("scheduler-website").value.trim();
+        const taskType = document.getElementById("task-type").value;
+        const scheduleType = document.querySelector('input[name="scheduleType"]:checked').value;
+        let payload = { website, task_type: taskType, recurring: scheduleType === "recurring" };
+
+        if (scheduleType === "one-time") {
+          const runDate = document.getElementById("run-date").value;
+          if (!runDate) {
+            Swal.fire("Error", "Please enter a run date and time.", "error");
+            return;
+          }
+          payload.run_date = runDate;
+        } else {
+          const dayOfWeek = document.getElementById("day-of-week").value.trim();
+          const hour = document.getElementById("hour").value;
+          const minute = document.getElementById("minute").value;
+          if (!dayOfWeek || hour === "" || minute === "") {
+            Swal.fire("Error", "Please fill all recurring fields.", "error");
+            return;
+          }
+          payload.day_of_week = dayOfWeek;
+          payload.hour = parseInt(hour);
+          payload.minute = parseInt(minute);
+        }
+
+        try {
+          const response = await fetch("/add_task", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          if (data.success) {
+            Swal.fire("Success", "Task scheduled successfully!", "success");
+            loadTasks();
+            taskForm.reset();
+            oneTimeFields.style.display = "block";
+            recurringFields.style.display = "none";
+          } else {
+            Swal.fire("Error", data.message, "error");
+          }
+        } catch (error) {
+          console.error("Error scheduling task:", error);
+          Swal.fire("Error", "An error occurred while scheduling the task.", "error");
+        }
+      });
+
+      async function loadTasks() {
+        try {
+          const response = await fetch("/get_tasks");
+          const tasks = await response.json();
+          tasksTableBody.innerHTML = "";
+          tasks.forEach(task => {
+            const tr = document.createElement("tr");
+            const scheduleInfo = task.recurring 
+              ? `Recurring: ${task.day_of_week}, ${task.hour}:${task.minute}`
+              : task.run_date 
+                ? `One-Time: ${new Date(task.run_date).toLocaleString()}`
+                : "";
+            tr.innerHTML = `
+              <td>${task.id}</td>
+              <td>${task.website}</td>
+              <td>${task.task_type}</td>
+              <td>${scheduleInfo}</td>
+              <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Delete</button></td>
+            `;
+            tasksTableBody.appendChild(tr);
+          });
+        } catch (error) {
+          console.error("Error loading tasks:", error);
+        }
+      }
+
+      window.deleteTask = async function(taskId) {
+        if (!confirm("Are you sure you want to delete this task?")) return;
+        try {
+          const response = await fetch(`/delete_task/${taskId}`, { method: "DELETE" });
+          const data = await response.json();
+          if (data.success) {
+            Swal.fire("Success", "Task deleted successfully!", "success");
+            loadTasks();
+          } else {
+            Swal.fire("Error", data.message, "error");
+          }
+        } catch (error) {
+          console.error("Error deleting task:", error);
+          Swal.fire("Error", "An error occurred while deleting the task.", "error");
+        }
+      };
+
+      loadTasks();
+    });
+  </script>
+</body>
+</html>
