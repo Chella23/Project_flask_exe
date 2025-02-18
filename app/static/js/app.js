@@ -142,6 +142,8 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    
+
     async function updateBlockedList() {
         const blockedList = document.getElementById("blocked-list");
         blockedList.innerHTML = "";

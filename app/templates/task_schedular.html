@@ -3,15 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Website Blocker Dashboard</title>
+  <title>Task Scheduler - Website Blocker Dashboard</title>
   <link rel="stylesheet" href="/static/css/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-  <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
-    // Display flash messages (if any)
+    // Flash message handling
     document.addEventListener("DOMContentLoaded", function () {
       const flashMessages = JSON.parse('{{ get_flashed_messages(with_categories=True) | tojson | safe }}');
       flashMessages.forEach(([category, message]) => {
@@ -24,7 +23,7 @@
     });
   </script>
   <style>
-    /* Basic Dashboard Styling */
+    /* Basic Dashboard and Task Scheduler Styling */
     .dashboard {
       display: flex;
       flex-direction: column;
@@ -49,35 +48,7 @@
       font-size: 16px;
       margin-right: 10px;
     }
-    /* Block/Unblock Form */
-    #block-website-form textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      resize: vertical;
-    }
-    .button-group {
-      margin-top: 10px;
-    }
-    /* Blocked Websites List */
-    #blocked-websites {
-      margin-top: 30px;
-    }
-    #blocked-websites h2 {
-      margin-bottom: 15px;
-    }
-    #blocked-list {
-      list-style: none;
-      padding-left: 0;
-    }
-    #blocked-list li {
-      padding: 8px 12px;
-      background: #f1f1f1;
-      margin-bottom: 8px;
-      border-radius: 4px;
-    }
-    /* Task Scheduler Section */
+    /* Scheduler Container */
     .scheduler-container {
       background: #fff;
       padding: 25px;
@@ -91,8 +62,8 @@
     .form-section {
       margin-bottom: 30px;
     }
-    #recurringFields {
-      display: none;
+    #oneTimeFields, #recurringFields {
+      margin-bottom: 15px;
     }
     /* Table styling for scheduled tasks */
     #tasks-table {
@@ -110,22 +81,21 @@
     </header>
     <nav class="sidebar">
       <ul class="menu">
-        <li><a href="{{ url_for('auth.success')}}" class="active"><i class="bi bi-house"></i><span>Home</span></a></li>
+        <li><a href="{{ url_for('auth.success') }}" class="active"><i class="bi bi-house"></i><span>Home</span></a></li>
         <li><a href="{{ url_for('auth.categories') }}"><i class="bi bi-grid"></i><span>Categories</span></a></li>
         <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a></li>
-        <li><a href=""><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
+        <li><a href="{{ url_for('auth.MFA') }}"><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
         <li><a href="{{ url_for('auth.password_protection') }}"><i class="bi bi-lock"></i><span>Password Protection</span></a></li>
         <li><a href="{{ url_for('auth.task_schedular') }}"><i class="bi bi-calendar"></i><span>Task Scheduler</span></a></li>
-  
-    </ul>
+      </ul>
     </nav>
     <!-- Main Content -->
     <div class="main-content">
       <header class="topic d-flex justify-content-between align-items-center">
-        <h1>Website Blocker</h1>
+        <h1>Task Scheduler</h1>
         <div>
           {% if session.get('user_id') %}
-            <span class="welcome-text">Welcome, {{ session.get('user_name')}}!</span>
+            <span class="welcome-text">Welcome, {{ session.get('user_name') }}!</span>
             <a href="{{ url_for('auth.signout') }}" class="signout btn btn-outline-danger">Sign Out</a>
           {% else %}
             <a href="{{ url_for('auth.signin') }}" class="signin btn btn-outline-primary">Sign In</a>
@@ -134,76 +104,90 @@
         </div>
       </header>
       <section id="content">
-        <!-- Block/Unblock Section -->
-        <form id="block-website-form" class="mb-4">
-          <div class="mb-3">
-            <label for="website-url" class="form-label">Enter Website URL(s):</label>
-            <textarea class="form-control" id="website-url" placeholder="Enter one or more website URLs, each on a new line" rows="3"></textarea>
-          </div>
-          <div class="button-group">
-            <button type="button" id="block-btn" class="btn btn-primary me-2">Block</button>
-            <button type="button" id="unblock-btn" class="btn btn-secondary">Unblock</button>
-          </div>
-        </form>
-        <div id="blocked-websites" class="mb-4">
-          <h2>Blocked Websites:</h2>
-          <ul id="blocked-list" class="list-group"></ul>
-        </div>
-        <!-- Task Scheduler Section -->
+        <!-- Task Scheduler Form -->
         <div class="scheduler-container">
-          <h2 class="text-center">Task Scheduler</h2>
-          <form id="task-scheduler-form" class="form-section">
+          <h2 class="text-center">Schedule a Task</h2>
+          <!-- Websites Input -->
+          <div class="mb-3">
+            <label for="scheduler-websites" class="form-label">Website URL(s)</label>
+            <textarea class="form-control" id="scheduler-websites" placeholder="Enter one or more website URLs, each on a new line" rows="3" required></textarea>
+          </div>
+          <!-- Schedule Type -->
+          <div class="mb-3">
+            <label class="form-label">Schedule Type</label>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="scheduleType" id="oneTime" value="one-time" checked>
+              <label class="form-check-label" for="oneTime">One-Time</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="scheduleType" id="recurring" value="recurring">
+              <label class="form-check-label" for="recurring">Recurring</label>
+            </div>
+          </div>
+          <!-- One-Time Fields -->
+          <div id="oneTimeFields">
             <div class="mb-3">
-              <label for="scheduler-website" class="form-label">Website URL</label>
-              <input type="text" class="form-control" id="scheduler-website" placeholder="e.g. www.example.com" required>
+              <label for="block-datetime" class="form-label">Block (Start) Date & Time</label>
+              <input type="datetime-local" class="form-control" id="block-datetime" required>
             </div>
             <div class="mb-3">
-              <label for="task-type" class="form-label">Task Type</label>
-              <select class="form-select" id="task-type" required>
-                <option value="block" selected>Block</option>
-                <option value="unblock">Unblock</option>
-              </select>
+              <label for="unblock-datetime" class="form-label">Unblock (End) Date & Time</label>
+              <input type="datetime-local" class="form-control" id="unblock-datetime" required>
+            </div>
+          </div>
+          <!-- Recurring Fields -->
+          <div id="recurringFields" style="display:none;">
+            <div class="mb-3">
+              <label class="form-label">Select Days</label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="mon" value="mon">
+                <label class="form-check-label" for="mon">Mon</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="tue" value="tue">
+                <label class="form-check-label" for="tue">Tue</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="wed" value="wed">
+                <label class="form-check-label" for="wed">Wed</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="thu" value="thu">
+                <label class="form-check-label" for="thu">Thu</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="fri" value="fri">
+                <label class="form-check-label" for="fri">Fri</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="sat" value="sat">
+                <label class="form-check-label" for="sat">Sat</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="sun" value="sun">
+                <label class="form-check-label" for="sun">Sun</label>
+              </div>
             </div>
             <div class="mb-3">
-              <label class="form-label">Schedule Type</label>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="scheduleType" id="oneTime" value="one-time" checked>
-                <label class="form-check-label" for="oneTime">One-Time</label>
-              </div>
-              <div class="form-check">
-                <input class="form-check-input" type="radio" name="scheduleType" id="recurring" value="recurring">
-                <label class="form-check-label" for="recurring">Recurring</label>
-              </div>
+              <label for="block-time" class="form-label">Block (Start) Time</label>
+              <input type="time" class="form-control" id="block-time" required>
             </div>
-            <div id="oneTimeFields" class="mb-3">
-              <label for="run-date" class="form-label">Run Date and Time</label>
-              <input type="datetime-local" class="form-control" id="run-date">
+            <div class="mb-3">
+              <label for="unblock-time" class="form-label">Unblock (End) Time</label>
+              <input type="time" class="form-control" id="unblock-time" required>
             </div>
-            <div id="recurringFields" class="mb-3" style="display:none;">
-              <div class="mb-3">
-                <label for="day-of-week" class="form-label">Day(s) of Week</label>
-                <input type="text" class="form-control" id="day-of-week" placeholder="e.g. mon,tue,wed">
-              </div>
-              <div class="mb-3">
-                <label for="hour" class="form-label">Hour (0-23)</label>
-                <input type="number" class="form-control" id="hour" min="0" max="23">
-              </div>
-              <div class="mb-3">
-                <label for="minute" class="form-label">Minute (0-59)</label>
-                <input type="number" class="form-control" id="minute" min="0" max="59">
-              </div>
-            </div>
-            <button type="submit" class="btn btn-success">Schedule Task</button>
-          </form>
+          </div>
+          <button type="submit" id="task-scheduler-form" class="btn btn-success">Schedule Task</button>
+          <hr>
           <h3 class="mt-4">Scheduled Tasks</h3>
           <table class="table table-striped" id="tasks-table">
             <thead>
               <tr>
                 <th>ID</th>
                 <th>Website</th>
-                <th>Task Type</th>
-                <th>Schedule</th>
                 <th>Action</th>
+                <th>Schedule</th>
+                <th>Delete</th>
               </tr>
             </thead>
             <tbody id="tasks-table-body">
@@ -220,12 +204,13 @@
   <script>
     // Task Scheduler JS Code
     document.addEventListener("DOMContentLoaded", function() {
-      const taskForm = document.getElementById("task-scheduler-form");
+      const taskFormBtn = document.getElementById("task-scheduler-form");
       const oneTimeFields = document.getElementById("oneTimeFields");
       const recurringFields = document.getElementById("recurringFields");
       const scheduleTypeRadios = document.getElementsByName("scheduleType");
       const tasksTableBody = document.getElementById("tasks-table-body");
 
+      // Toggle schedule type fields
       scheduleTypeRadios.forEach(radio => {
         radio.addEventListener("change", function() {
           if (this.value === "one-time") {
@@ -238,31 +223,48 @@
         });
       });
 
-      taskForm.addEventListener("submit", async function(e) {
+      // Submit the scheduler form
+      taskFormBtn.addEventListener("click", async function(e) {
         e.preventDefault();
-        const website = document.getElementById("scheduler-website").value.trim();
-        const taskType = document.getElementById("task-type").value;
+        const websitesInput = document.getElementById("scheduler-websites").value.trim();
+        if (!websitesInput) {
+          Swal.fire("Error", "Please enter at least one website URL.", "error");
+          return;
+        }
+        // The input may contain multiple lines
+        const website = websitesInput; // Send the entire textarea text; backend splits by newline.
         const scheduleType = document.querySelector('input[name="scheduleType"]:checked').value;
-        let payload = { website, task_type: taskType, recurring: scheduleType === "recurring" };
+        let payload = { website, recurring: scheduleType === "recurring" };
 
         if (scheduleType === "one-time") {
-          const runDate = document.getElementById("run-date").value;
-          if (!runDate) {
-            Swal.fire("Error", "Please enter a run date and time.", "error");
+          const blockDatetime = document.getElementById("block-datetime").value;
+          const unblockDatetime = document.getElementById("unblock-datetime").value;
+          if (!blockDatetime || !unblockDatetime) {
+            Swal.fire("Error", "Please enter both block and unblock datetime.", "error");
             return;
           }
-          payload.run_date = runDate;
+          payload.block_time = blockDatetime;
+          payload.unblock_time = unblockDatetime;
         } else {
-          const dayOfWeek = document.getElementById("day-of-week").value.trim();
-          const hour = document.getElementById("hour").value;
-          const minute = document.getElementById("minute").value;
-          if (!dayOfWeek || hour === "" || minute === "") {
-            Swal.fire("Error", "Please fill all recurring fields.", "error");
+          // Recurring: get selected days and times
+          const dayCheckboxes = document.querySelectorAll('input[type="checkbox"]');
+          let selectedDays = [];
+          dayCheckboxes.forEach(chk => {
+            if (chk.checked) selectedDays.push(chk.value);
+          });
+          if (selectedDays.length === 0) {
+            Swal.fire("Error", "Please select at least one day for recurring tasks.", "error");
             return;
           }
-          payload.day_of_week = dayOfWeek;
-          payload.hour = parseInt(hour);
-          payload.minute = parseInt(minute);
+          payload.day_of_week = selectedDays.join(",");
+          const blockTime = document.getElementById("block-time").value;
+          const unblockTime = document.getElementById("unblock-time").value;
+          if (!blockTime || !unblockTime) {
+            Swal.fire("Error", "Please enter both block and unblock times.", "error");
+            return;
+          }
+          payload.block_time = blockTime;
+          payload.unblock_time = unblockTime;
         }
 
         try {
@@ -275,7 +277,8 @@
           if (data.success) {
             Swal.fire("Success", "Task scheduled successfully!", "success");
             loadTasks();
-            taskForm.reset();
+            document.getElementById("scheduler-websites").value = "";
+            taskFormBtn.form.reset();
             oneTimeFields.style.display = "block";
             recurringFields.style.display = "none";
           } else {
@@ -290,24 +293,29 @@
       async function loadTasks() {
         try {
           const response = await fetch("/get_tasks");
-          const tasks = await response.json();
-          tasksTableBody.innerHTML = "";
-          tasks.forEach(task => {
-            const tr = document.createElement("tr");
-            const scheduleInfo = task.recurring 
-              ? `Recurring: ${task.day_of_week}, ${task.hour}:${task.minute}`
-              : task.run_date 
-                ? `One-Time: ${new Date(task.run_date).toLocaleString()}`
-                : "";
-            tr.innerHTML = `
-              <td>${task.id}</td>
-              <td>${task.website}</td>
-              <td>${task.task_type}</td>
-              <td>${scheduleInfo}</td>
-              <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Delete</button></td>
-            `;
-            tasksTableBody.appendChild(tr);
-          });
+          const result = await response.json();
+          if (result.success && result.tasks) {
+            tasksTableBody.innerHTML = "";
+            result.tasks.forEach(task => {
+              const tr = document.createElement("tr");
+              let scheduleInfo = "";
+              if (task.recurring) {
+                scheduleInfo = `Recurring on ${task.day_of_week} at ${("0" + task.hour).slice(-2)}:${("0" + task.minute).slice(-2)}`;
+              } else if (task.run_date) {
+                scheduleInfo = `One-Time: ${new Date(task.run_date).toLocaleString()}`;
+              }
+              tr.innerHTML = `
+                <td>${task.id}</td>
+                <td>${task.website}</td>
+                <td>${task.task_type === "block" ? "Block" : "Unblock"}</td>
+                <td>${scheduleInfo}</td>
+                <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Delete</button></td>
+              `;
+              tasksTableBody.appendChild(tr);
+            });
+          } else {
+            tasksTableBody.innerHTML = "<tr><td colspan='5'>No scheduled tasks.</td></tr>";
+          }
         } catch (error) {
           console.error("Error loading tasks:", error);
         }
@@ -319,7 +327,7 @@
           const response = await fetch(`/delete_task/${taskId}`, { method: "DELETE" });
           const data = await response.json();
           if (data.success) {
-            Swal.fire("Success", "Task deleted successfully!", "success");
+            Swal.fire("Deleted", "Task deleted successfully!", "success");
             loadTasks();
           } else {
             Swal.fire("Error", data.message, "error");

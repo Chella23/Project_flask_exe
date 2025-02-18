@@ -13,6 +13,8 @@ class User(db.Model):
     name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+   
+    mfa = db.relationship('Mfa', backref='user', uselist=False, cascade="all, delete-orphan")
 
     # Relationship to custom categories
     custom_categories = db.relationship('CustomCategory', backref='user', lazy=True, cascade="all, delete-orphan")
@@ -115,17 +117,52 @@ class Favorite(db.Model):
             cat = self.default_category.title if self.default_category else (self.custom_category.title if self.custom_category else "Unknown")
             return f"<Favorite Category {cat} by User {self.user_id}>"
 
+
 class ScheduledTask(db.Model):
+    __tablename__ = "scheduled_tasks"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
-    website = db.Column(db.String(255), nullable=False)  # This field is NOT NULL
-    task_type = db.Column(db.String(10), nullable=False)
-    run_date = db.Column(db.DateTime, nullable=True)
-    recurring = db.Column(db.Boolean, default=False)
-    day_of_week = db.Column(db.String(20), nullable=True)
-    hour = db.Column(db.Integer, nullable=True)
-    minute = db.Column(db.Integer, nullable=True)
+    website = db.Column(db.String(255), nullable=False)  # The website URL to block/unblock
+    task_type = db.Column(db.String(10), nullable=False)   # "block" or "unblock"
+    run_date = db.Column(db.DateTime, nullable=True)         # For one‑time tasks
+    recurring = db.Column(db.Boolean, default=False)         # For recurring tasks
+    day_of_week = db.Column(db.String(50), nullable=True)      # Comma‐separated days (e.g., "Mon,Tue,Wed")
+    hour = db.Column(db.Integer, nullable=True)              # Hour (0–23) for recurring tasks
+    minute = db.Column(db.Integer, nullable=True)            # Minute (0–59) for recurring tasks
     active = db.Column(db.Boolean, default=True)
-    job_id = db.Column(db.String(100), nullable=True)
+    job_id = db.Column(db.String(100), nullable=True)        # APScheduler job ID
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "website": self.website,
+            "task_type": self.task_type,
+            "run_date": self.run_date.isoformat() if self.run_date else None,
+            "recurring": self.recurring,
+            "day_of_week": self.day_of_week,
+            "hour": self.hour,
+            "minute": self.minute,
+            "active": self.active,
+            "job_id": self.job_id
+        }
+
+
+# -------------------------
+# MFA Table
+# -------------------------
+class Mfa(db.Model):
+    __tablename__ = 'mfa'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), unique=True, nullable=False)
+    mfa_enabled = db.Column(db.Boolean, default=False)  # MFA toggle
+    six_digit_pin = db.Column(db.String(6), nullable=True)  # Encrypted 6-digit PIN (to be hashed)
+    otp_attempts = db.Column(db.Integer, default=0)  # Number of OTP attempts
+    otp_timestamp = db.Column(db.DateTime, nullable=True)  # Last OTP sent time
+
+    def __init__(self, user_id, mfa_enabled=False, six_digit_pin=None):
+        self.user_id = user_id
+        self.mfa_enabled = mfa_enabled
+        self.six_digit_pin = six_digit_pin
+

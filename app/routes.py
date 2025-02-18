@@ -1,4 +1,5 @@
 import datetime
+import bcrypt
 from flask import (
     Blueprint,
     jsonify,
@@ -11,14 +12,15 @@ from flask import (
 )
 from flask_mail import Message
 from app.utils.site_blocker import block_website, unblock_website
-from app.utils.task_schedular import add_scheduled_task
+from app.utils.task_schedular import add_scheduled_task, remove_scheduled_task, init_scheduler
 from . import db, mail
 from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
-from .models import db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask
+from .models import Mfa, db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask
 from sqlalchemy.orm import joinedload
+from dateutil import parser
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -135,24 +137,34 @@ def verify_otp():
 # Block/Unblock Website Updates
 # -------------------------
 
-@auth_bp.route('/block', methods=[Methods.POST])
+@auth_bp.route('/block', methods=['POST'])
 def block_site():
+    """Blocks websites with MFA and password protection."""
     if 'user_id' not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
 
     user_id = session["user_id"]
-    data = request.get_json()
-    if not data:
-        return jsonify({"success": False, "message": "Invalid request format"}), 400
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "message": "User not found"}), 404
 
+    data = request.get_json()
     password = data.get("password")
-    website_urls = data.get("websites") or []  # Expecting a list of URLs
+    otp = data.get("otp")
+    website_urls = data.get("websites") or []
 
     if isinstance(website_urls, str):  
-        website_urls = [website_urls.strip()]  # Convert single string to list
+        website_urls = [website_urls.strip()]
 
+    # # Validate OTP if MFA is enabled
+    # if user.mfa_enabled:
+    #     if not otp or not verify_otp(otp):
+    #         return jsonify({"success": False, "message": "Invalid or expired OTP"}), 400
+    #     session.pop("otp", None)
+    #     session.pop("otp_expiry", None)
+
+    # Validate password if password protection is enabled
     user_password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
-
     if user_password_entry and user_password_entry.enabled:
         if not password or not checkpw(password.encode("utf-8"), user_password_entry.password.encode("utf-8")):
             return jsonify({"success": False, "message": "Incorrect password"}), 400
@@ -162,49 +174,49 @@ def block_site():
 
     for website_url in website_urls:
         website_url = website_url.strip()
-
-        if not website_url or "." not in website_url:  
-            failed_websites.append(website_url)  # Mark invalid URLs as failed
-            continue  # Skip blocking
-
+        if not website_url or "." not in website_url:
+            failed_websites.append(website_url)
+            continue
         success = block_website(website_url)
         if success:
             blocked_websites.append(website_url)
         else:
             failed_websites.append(website_url)
 
-    if blocked_websites:
-        return jsonify({
-            "success": True,
-            "message": f"Websites blocked successfully: {', '.join(blocked_websites)}",
-            "failed": failed_websites
-        })
-    
     return jsonify({
-        "success": False,
-        "message": "No valid websites were blocked.",
+        "success": True if blocked_websites else False,
+        "message": f"Websites blocked: {', '.join(blocked_websites)}" if blocked_websites else "No valid websites blocked.",
         "failed": failed_websites
     })
 
-
-@auth_bp.route('/unblock', methods=[Methods.POST])
+@auth_bp.route('/unblock', methods=['POST'])
 def unblock_site():
+    """Unblocks websites with MFA and password protection."""
     if 'user_id' not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
 
     user_id = session["user_id"]
-    data = request.get_json()
-    if not data:
-        return jsonify({"success": False, "message": "Invalid request format"}), 400
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"success": False, "message": "User not found"}), 404
 
+    data = request.get_json()
     password = data.get("password")
-    website_urls = data.get("websites") or []  # Expecting a list of URLs
+    otp = data.get("otp")
+    website_urls = data.get("websites") or []
 
     if isinstance(website_urls, str):  
-        website_urls = [website_urls.strip()]  # Convert single string to list
+        website_urls = [website_urls.strip()]
 
+    # # Validate OTP if MFA is enabled
+    # if user.mfa_enabled:
+    #     if not otp or not verify_otp(otp):
+    #         return jsonify({"success": False, "message": "Invalid or expired OTP"}), 400
+    #     session.pop("otp", None)
+    #     session.pop("otp_expiry", None)
+
+    # Validate password if password protection is enabled
     user_password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
-
     if user_password_entry and user_password_entry.enabled:
         if not password or not checkpw(password.encode("utf-8"), user_password_entry.password.encode("utf-8")):
             return jsonify({"success": False, "message": "Incorrect password"}), 400
@@ -214,35 +226,23 @@ def unblock_site():
 
     for website_url in website_urls:
         website_url = website_url.strip()
-
-        if not website_url or "." not in website_url:  
-            failed_websites.append(website_url)  # Mark invalid URLs as failed
-            continue  # Skip unblocking
-
+        if not website_url or "." not in website_url:
+            failed_websites.append(website_url)
+            continue
         success = unblock_website(website_url)
         if success:
             unblocked_websites.append(website_url)
         else:
             failed_websites.append(website_url)
 
-    if unblocked_websites:
-        return jsonify({
-            "success": True,
-            "message": f"Websites unblocked successfully: {', '.join(unblocked_websites)}",
-            "failed": failed_websites
-        })
-    
     return jsonify({
-        "success": False,
-        "message": "No valid websites were unblocked.",
+        "success": True if unblocked_websites else False,
+        "message": f"Websites unblocked: {', '.join(unblocked_websites)}" if unblocked_websites else "No valid websites unblocked.",
         "failed": failed_websites
     })
-
 # -------------------------
 # Categories Route
 # -------------------------
-
-# --- Categories Page ---
 @auth_bp.route('/categories')
 def categories():
     if 'user_id' not in session:
@@ -251,9 +251,11 @@ def categories():
     
     user_id = session['user_id']
 
-    # Fetch all categories
+    # Fetch default categories
     default_categories = DefaultCategory.query.all()
-    custom_categories = CustomCategory.query.filter_by(user_id=user_id).all()
+
+    # Fetch user's custom categories, ensuring relationships are loaded
+    custom_categories = CustomCategory.query.filter_by(user_id=user_id).options(db.joinedload(CustomCategory.websites)).all()
 
     # Fetch user's favorite entries
     user_favorites = Favorite.query.filter_by(user_id=user_id).all()
@@ -261,7 +263,6 @@ def categories():
     # Build a dictionary for URL-based favorites keyed by category title.
     favorite_urls = {}
     for fav in user_favorites:
-        # Determine the category title using the relationship, if available.
         if fav.default_category:
             category_title = fav.default_category.title
         elif fav.custom_category:
@@ -269,7 +270,6 @@ def categories():
         else:
             category_title = "Uncategorized"
         
-        # Only add URL-based favorites (where fav.url is set)
         if fav.url:
             if category_title not in favorite_urls:
                 favorite_urls[category_title] = []
@@ -277,16 +277,18 @@ def categories():
 
     return render_template("categories.html", 
                            default_categories=default_categories,
-                           custom_categories=custom_categories,
+                           user_custom_categories=custom_categories,  # ✅ Correct variable name
                            favorite_urls=favorite_urls,
                            user_favorites=[fav.default_category_id or fav.custom_category_id for fav in user_favorites])
 
+# --- Add Custom Category ---
 @auth_bp.route('/add_custom_category', methods=['POST'])
 def add_custom_category():
     if 'user_id' not in session:
         flash("Please log in to add custom categories.", "error")
         return redirect(url_for('auth.signin'))
     
+    user_id = session['user_id']
     title = request.form.get('category_title')
     websites_str = request.form.get('category_websites')
 
@@ -294,22 +296,25 @@ def add_custom_category():
         flash("Please provide both a title and at least one website URL.", "error")
         return redirect(url_for('auth.categories'))
     
-    existing_category = CustomCategory.query.filter_by(user_id=session['user_id'], title=title).first()
+    # Check if the category already exists for the user
+    existing_category = CustomCategory.query.filter_by(user_id=user_id, title=title).first()
     if existing_category:
         flash("A category with this title already exists.", "error")
         return redirect(url_for('auth.categories'))
     
-    custom_category = CustomCategory(user_id=session['user_id'], title=title)
+    # Create a new custom category
+    custom_category = CustomCategory(user_id=user_id, title=title)
     db.session.add(custom_category)
-    db.session.flush()  # to get the new category ID
+    db.session.flush()  # Flush to get the new category ID
 
+    # Split websites input into a list and store them
     websites_list = [url.strip() for url in websites_str.split(",") if url.strip()]
-    
     for base_url in websites_list:
         website = CustomWebsite(category_id=custom_category.id, name=base_url, url=base_url)
         db.session.add(website)
 
-    db.session.commit()
+    db.session.commit()  # Commit changes to DB
+
     flash("Custom category added successfully!", "success")
     return redirect(url_for('auth.categories'))
 
@@ -548,39 +553,50 @@ def password_protection():
     return render_template("pass_pro.html")
 
 
+# -------------------------
+# Get Scheduled Tasks
+# -------------------------
+@auth_bp.route("/get_tasks", methods=["GET"])
+def get_tasks():
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "User not logged in"}), 403
+    user_id = session["user_id"]
+    tasks = ScheduledTask.query.filter_by(user_id=user_id, active=True).all()
+    tasks_list = [task.to_dict() for task in tasks]  # Make sure ScheduledTask has a to_dict() method.
+    return jsonify({"success": True, "tasks": tasks_list})
+
+# -------------------------
+# Task Scheduler Routes
+# -------------------------
 @auth_bp.route("/task_schedular", methods=["GET"])
 def task_schedular():
-    """
-    GET:
-      - If the user is logged in, fetch and display all scheduled tasks.
-      - Render the task scheduler page (task_schedular.html) with the tasks.
-    """
     if "user_id" not in session:
         flash("Please sign in to access the Task Scheduler", "error")
         return redirect(url_for("auth.signin"))
-
     user_id = session["user_id"]
-    # Query scheduled tasks for the current user.
-    tasks = ScheduledTask.query.filter_by(user_id=user_id).all()
+    tasks = ScheduledTask.query.filter_by(user_id=user_id, active=True).all()
     return render_template("task_schedular.html", tasks=tasks)
-
 
 @auth_bp.route("/add_task", methods=["POST"])
 def add_task():
     """
-    POST:
-      - Create scheduled task(s) for the logged-in user.
-      - Expected JSON payload:
-            {
-                "website": "www.example.com",        # The website URL (for a single task)
-                "task_type": "block",                # "block" or "unblock"
-                "recurring": false,                  # Boolean; false for one-time tasks
-                "run_date": "2025-02-10T09:30:00",     # ISO 8601 string (if one-time)
-                "day_of_week": "Mon,Tue,Wed",          # For recurring tasks (optional)
-                "hour": 9,                           # For recurring tasks (optional)
-                "minute": 30                         # For recurring tasks (optional)
-            }
-      - The utility function add_scheduled_task() handles the scheduling logic.
+    Expects a JSON payload with the following keys:
+
+    Common:
+      - "website": A multiline string containing one or more website URLs (one per line).
+      - "recurring": Boolean; true for recurring tasks.
+      
+    For one-time tasks:
+      - "block_time": ISO datetime string for the block (start) time (e.g. "2025-02-10T09:30" or "2025-02-10T09:30:00").
+      - "unblock_time": ISO datetime string for the unblock (end) time.
+      
+    For recurring tasks:
+      - "day_of_week": Comma-separated string of days (e.g. "mon,tue,wed").
+      - "block_time": Time string in HH:MM format for block.
+      - "unblock_time": Time string in HH:MM format for unblock.
+      
+    For each valid website (each nonempty line that contains a dot), two tasks are created:
+      one scheduled to block at the specified start time and one scheduled to unblock at the specified end time.
     """
     if "user_id" not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
@@ -590,49 +606,234 @@ def add_task():
         return jsonify({"success": False, "message": "Invalid request data"}), 400
 
     user_id = session["user_id"]
-    website = data.get("website")
-    task_type = data.get("task_type")  # expected "block" or "unblock"
+    websites_text = data.get("website")
     recurring = data.get("recurring", False)
-    run_date_str = data.get("run_date")  # for one-time tasks (ISO 8601 format)
-    day_of_week = data.get("day_of_week")  # for recurring tasks (e.g., "Mon,Tue,Wed")
-    hour = data.get("hour")
-    minute = data.get("minute")
 
-    # Convert run_date string to datetime if provided
-    run_date = None
-    if run_date_str:
+    if not websites_text:
+        return jsonify({"success": False, "message": "No website(s) provided"}), 400
+
+    # Split by newline and only keep lines that contain a dot (very basic validation)
+    websites = [line.strip() for line in websites_text.split("\n") if line.strip() and "." in line.strip()]
+    if not websites:
+        return jsonify({"success": False, "message": "No valid website URLs found."}), 400
+
+    tasks_created = []
+    if recurring:
+        day_of_week = data.get("day_of_week")  # e.g. "mon,tue,wed"
+        block_time_str = data.get("block_time")  # e.g. "09:30"
+        unblock_time_str = data.get("unblock_time")  # e.g. "17:00"
+        if not day_of_week or not block_time_str or not unblock_time_str:
+            return jsonify({"success": False, "message": "Recurring tasks require day_of_week, block_time, and unblock_time"}), 400
         try:
-            run_date = datetime.fromisoformat(run_date_str)
-        except ValueError:
-            return jsonify({"success": False, "message": "Invalid run_date format"}), 400
+            block_hour, block_minute = map(int, block_time_str.split(":"))
+            unblock_hour, unblock_minute = map(int, unblock_time_str.split(":"))
+        except Exception as e:
+            return jsonify({"success": False, "message": "Invalid time format. Use HH:MM."}), 400
 
-    try:
-        # Call your utility function to add and schedule the task.
-        task = add_scheduled_task(user_id, website, task_type, run_date, recurring, day_of_week, hour, minute)
-    except Exception as e:
-        return jsonify({"success": False, "message": f"Error scheduling task: {str(e)}"}), 500
+        for website in websites:
+            block_task = add_scheduled_task(
+                user_id, website, task_type="block",
+                recurring=True, day_of_week=day_of_week,
+                block_hour=block_hour, block_minute=block_minute
+            )
+            unblock_task = add_scheduled_task(
+                user_id, website, task_type="unblock",
+                recurring=True, day_of_week=day_of_week,
+                unblock_hour=unblock_hour, unblock_minute=unblock_minute
+            )
+            tasks_created.extend([block_task.to_dict(), unblock_task.to_dict()])
+    else:
+        block_time_str = data.get("block_time")  # e.g. "2025-02-10T09:30" or with seconds "2025-02-10T09:30:00"
+        unblock_time_str = data.get("unblock_time")
+        if not block_time_str or not unblock_time_str:
+            return jsonify({"success": False, "message": "One-time tasks require both block_time and unblock_time"}), 400
 
-    return jsonify({
-        "success": True,
-        "message": "Task added successfully",
-        "task": task.to_dict()  # assuming your ScheduledTask model has a to_dict() method
-    })
+        # Append seconds if missing (length 16 indicates format "YYYY-MM-DDTHH:MM")
 
+        try:
+            run_date_block = parser.parse(block_time_str)
+            run_date_unblock = parser.parse(unblock_time_str)
+        except Exception as e:
+            return jsonify({"success": False, "message": "Invalid datetime format"}), 400
+
+
+        for website in websites:
+            block_task = add_scheduled_task(
+                user_id, website, task_type="block",
+                run_date=run_date_block, recurring=False
+            )
+            unblock_task = add_scheduled_task(
+                user_id, website, task_type="unblock",
+                run_date=run_date_unblock, recurring=False
+            )
+            tasks_created.extend([block_task.to_dict(), unblock_task.to_dict()])
+
+    if tasks_created:
+        return jsonify({"success": True, "message": "Tasks scheduled successfully", "tasks": tasks_created})
+    else:
+        return jsonify({"success": False, "message": "Error scheduling tasks"}), 500
 
 @auth_bp.route("/delete_task/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    """
-    DELETE:
-      - Delete a scheduled task by its ID if it belongs to the logged‑in user.
-    """
     if "user_id" not in session:
         return jsonify({"success": False, "message": "User not logged in"}), 403
-
     task = ScheduledTask.query.get(task_id)
     if not task or task.user_id != session["user_id"]:
         return jsonify({"success": False, "message": "Task not found"}), 404
+    if remove_scheduled_task(task_id):
+        return jsonify({"success": True, "message": "Task deleted successfully"})
+    else:
+        return jsonify({"success": False, "message": "Error deleting task"}), 500
 
-    db.session.delete(task)
+@auth_bp.route("/get_mfa_status", methods=["GET"])
+def get_mfa_status():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    mfa = Mfa.query.filter_by(user_id=user_id).first()
+
+    return jsonify({"mfa_enabled": bool(mfa)})  # Return True if MFA record exists
+@auth_bp.route("/toggle_mfa", methods=["POST"])
+def toggle_mfa():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user_id = session["user_id"]
+    data = request.get_json()
+    enable_mfa = data.get("enable")
+    
+    # Fetch existing MFA record
+    mfa = Mfa.query.filter_by(user_id=user_id).first()
+
+    if enable_mfa:
+        six_digit_pin = data.get("six_digit_pin")
+        # Validate PIN
+        if not six_digit_pin or not six_digit_pin.isdigit() or len(six_digit_pin) != 6:
+            return jsonify({"error": "Invalid PIN. Must be a 6-digit number."}), 400
+
+        hashed_pin = bcrypt.hashpw(six_digit_pin.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+        if not mfa:
+            mfa = Mfa(user_id=user_id, mfa_enabled=True, six_digit_pin=hashed_pin)
+            db.session.add(mfa)
+        else:
+            mfa.mfa_enabled = True
+            mfa.six_digit_pin = hashed_pin
+
+        db.session.commit()
+        return jsonify({"success": True, "message": "MFA enabled successfully"})
+    
+    # If disabling MFA
+    else:
+        if mfa:
+            db.session.delete(mfa)
+            db.session.commit()
+        return jsonify({"success": True, "message": "MFA disabled successfully"})
+
+
+@auth_bp.route("/verify_mfa", methods=["POST"])
+def verify_mfa():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    otp = data.get("otp")  # OTP entered by user
+    six_digit_pin = data.get("six_digit_pin")  # PIN (if needed)
+
+    user_id = session["user_id"]
+    mfa = Mfa.query.filter_by(user_id=user_id).first()
+
+    # Check if OTP exists in session
+    if "otp" not in session or "otp_expiry" not in session:
+        return jsonify({"error": "OTP expired or not found. Please request a new one."}), 400
+
+    # Check OTP expiry
+    otp_expiry = session.get("otp_expiry")
+    if time.time() > otp_expiry:
+        # Clear OTP session data after expiry
+        session.pop("otp", None)
+        session.pop("otp_expiry", None)
+        return jsonify({"error": "OTP expired. Please request a new one."}), 400
+
+    # Ensure OTP is entered correctly (converted to integer for comparison)
+    try:
+        entered_otp = int(otp)  # Convert to integer to compare
+    except ValueError:
+        return jsonify({"error": "Invalid OTP format. OTP should be a 6-digit number."}), 400
+
+    # Verify the OTP
+    if entered_otp != session.get("otp"):
+        return jsonify({"error": "Invalid OTP"}), 400
+
+    # Clear OTP from session after successful verification
+    session.pop("otp", None)
+    session.pop("otp_expiry", None)
+
+    # If OTP is correct but MFA is not set up yet, ask for PIN setup
+    if not mfa:
+        return jsonify({"success": True, "message": "OTP verified. Please set your 6-digit PIN."})
+
+    # If MFA is set, validate 6-digit PIN if provided
+    if six_digit_pin:
+        # Hash the entered PIN and compare it with the stored hashed PIN
+        hashed_pin = mfa.six_digit_pin.encode('utf-8')  # Assuming stored pin is already hashed
+
+        if not bcrypt.checkpw(six_digit_pin.encode("utf-8"), hashed_pin):  # Hash the entered PIN and compare
+            return jsonify({"error": "Incorrect 6-digit PIN"}), 400
+
+        return jsonify({"success": True, "message": "MFA verification successful"})
+
+    return jsonify({"error": "Please enter your 6-digit PIN to complete the process."}), 400
+
+
+    
+@auth_bp.route("/get_user_email", methods=["GET"])
+def get_user_email():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    user = User.query.get(session["user_id"])
+    if user:
+        return jsonify({"email": user.email})
+    return jsonify({"error": "User not found"}), 404
+
+@auth_bp.route("/set_pin", methods=["POST"])
+def set_pin():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json()
+    pin = data.get("pin")
+
+    if not pin or len(pin) != 6 or not pin.isdigit():
+        return jsonify({"error": "PIN must be a 6-digit number"}), 400
+
+    hashed_pin = bcrypt.hashpw(pin.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    user_id = session["user_id"]
+    existing_mfa = Mfa.query.filter_by(user_id=user_id).first()
+
+    if existing_mfa:
+        existing_mfa.six_digit_pin = hashed_pin
+    else:
+        new_mfa = Mfa(user_id=user_id, six_digit_pin=hashed_pin)
+        db.session.add(new_mfa)
+
     db.session.commit()
-    return jsonify({"success": True, "message": "Task deleted successfully"})
 
+    return jsonify({"success": True, "message": "MFA enabled successfully!"})
+
+@auth_bp.route("/disable_mfa", methods=["POST"])
+def disable_mfa():
+    user = User.query.get(session['user_id'])
+    user.mfa_enabled = False
+    user.pin = None
+    db.session.commit()
+    return jsonify({"success": True, "message": "MFA disabled"})
+
+
+
+@auth_bp.route("/MFA", methods=["GET"])
+def MFA():
+    return render_template("mfa.html")

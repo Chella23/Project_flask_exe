@@ -635,3 +635,238 @@ a:active {
     background: linear-gradient(135deg, #50E3C2, #9013FE, #4A90E2);
 }
 
+
+.topic {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 10px 15px;
+    border-radius: 8px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.topic h1 {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.welcome-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 15px;
+}
+
+/* Task Scheduler Form */
+.scheduler-container {
+    background: #fff;
+    color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.scheduler-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Input Fields */
+.form-label {
+    font-weight: bold;
+    margin-bottom: 5px;
+    display: block;
+}
+
+textarea.form-control,
+input.form-control {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+textarea.form-control:focus,
+input.form-control:focus {
+    border-color: #6272ff;
+    box-shadow: 0 0 8px rgba(98, 114, 255, 0.5);
+    outline: none;
+}
+
+/* Schedule Type */
+.form-check {
+    margin-bottom: 10px;
+}
+
+.form-check-input {
+    margin-right: 10px;
+}
+
+#recurringFields {
+    display: none;
+}
+
+/* Recurring Schedule Days */
+.form-check-inline {
+    margin-right: 15px;
+}
+
+/* Submit Button */
+#task-scheduler-form {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+    margin-top: 20px;
+}
+
+#task-scheduler-form:hover {
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
+}
+
+#task-scheduler-form:active {
+    transform: translateY(0);
+}
+
+/* Scheduled Tasks Table */
+#tasks-table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+#tasks-table th,
+#tasks-table td {
+    padding: 12px;
+    text-align: center;
+    border: 1px solid #ddd;
+}
+
+#tasks-table th {
+    background: linear-gradient(135deg, #6bc4ff, #6272ff);
+    color: white;
+}
+
+#tasks-table tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+/* Delete Button */
+.delete-btn {
+    padding: 6px 12px;
+    background: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.delete-btn:hover {
+    background: #ff4f4f;
+}
+
+/* Sign In & Sign Out Buttons */
+.signin,
+.signup,
+.signout {
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.signin {
+    background: #007bff;
+    color: white;
+}
+
+.signup {
+    background: #28a745;
+    color: white;
+}
+
+.signout {
+    background: #dc3545;
+    color: white;
+}
+
+
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: 10px;
+        border-radius: 0;
+    }
+
+    .scheduler-container {
+        max-width: 100%;
+        padding: 15px;
+    }
+
+    textarea.form-control,
+    input.form-control {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    #task-scheduler-form {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .sidebar {
+        width: 200px;
+    }
+}
+
+@media (max-width: 480px) {
+    header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .topic h1 {
+        font-size: 20px;
+    }
+
+    .scheduler-container {
+        padding: 10px;
+    }
+
+    textarea.form-control,
+    input.form-control {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    #task-scheduler-form {
+        font-size: 12px;
+        padding: 8px;
+    }
+
+    #tasks-table th,
+    #tasks-table td {
+        font-size: 12px;
+        padding: 8px;
+    }
+}
+

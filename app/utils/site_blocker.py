@@ -12,6 +12,12 @@ from selenium.webdriver.chrome.options import Options
 import json
 import re
 
+def is_password_protected():
+    """
+    Checks if password protection is enabled.
+    This can be modified to check a config file or environment variable.
+    """
+    return os.getenv("PASSWORD_PROTECTION", "false").lower() == "true"
 
 
 def clear_dns_cache():
@@ -115,11 +121,6 @@ def clear_browser_cache():
     except Exception as e:
         print(f"❌ Error clearing browser cache: {e}")
 
-
-import re
-import subprocess
-import platform
-import socket
 
 def resolve_ips(website):
     """

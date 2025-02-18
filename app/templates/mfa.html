@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MFA Authentication</title>
+    
+
+
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+<style>/* Add this CSS to the existing styles (styles.css) */
+   /* Toggle Switch */
+   .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.4s;
+            border-radius: 25px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 4px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #007bff;
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        /* Toggle Status Text */
+        #toggle-status {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+        /* Forgot Password Link */
+        #forgot-password {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const flashMessages = JSON.parse('{{ get_flashed_messages(with_categories=True) | tojson | safe }}');
+            flashMessages.forEach(([category, message]) => {
+                Swal.fire({
+                    icon: category === 'success' ? 'success' : 'error',
+                    title: category.charAt(0).toUpperCase() + category.slice(1),
+                    text: message,
+                });
+            });
+        });
+
+
+
+    </script>
+</head>
+
+<body>
+    <div class="dashboard">
+        <header>
+            <div class="menu-toggle" id="menu-toggle">
+                <img src="{{ url_for('static', filename='images/menutoggle.png') }}" alt="Menu Toggle">
+            </div>
+        </header>
+        <nav class="sidebar">
+            <ul class="menu">
+                <li><a href="{{ url_for('auth.success')}}" class="active"> <i
+                            class="bi bi-house"></i><span>Home</span></a></li>
+                <li><a href="{{ url_for('auth.categories') }}"><i class="bi bi-grid"></i><span>Categories</span></a>
+                </li>
+                <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a>
+                </li>
+                <li><a href="{{ url_for('auth.MFA') }}"><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
+                <li><a href="{{ url_for('auth.password_protection') }}"> <i class="bi bi-lock"></i><span>Password
+                            Protection</span></a></li>
+                <li><a href="{{ url_for('auth.task_schedular') }}"><i class="bi bi-calendar"></i><span>Task
+                            Scheduler</span></a></li>
+
+            </ul>
+        </nav>
+        <div class="main-content">
+            <header class="topic">
+                <h1>Website Blocker</h1>
+                <div>
+                    {% if session.get('user_id') %}
+                    <span class="welcome-text">Welcome, {{ session.get('user_name')}}!</span>
+                    <a href="{{ url_for('auth.signout') }}" class="signout">Sign Out</a>
+                    {% else %}
+                    <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
+                    <a href="{{ url_for('auth.signup') }}" class="signup">Sign Up</a>
+                    {% endif %}
+                </div>
+            </header>
+
+            <h1>MFA Authentication</h1>
+
+            <!-- MFA Toggle -->
+            <label class="switch">
+                <input type="checkbox" id="mfaToggle" onchange="toggleMFA()">
+                <span class="slider round"></span>
+            </label>
+            <span id="mfaStatus">MFA is Disabled</span>
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/mfa.js') }}"></script>
+    <script src="/static/js/app.js?v=2"></script>
+    <script src="/static/js/script.js?v=2"></script>
+</body>
+
+</html>

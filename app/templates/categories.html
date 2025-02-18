@@ -34,20 +34,20 @@
         },
         body: JSON.stringify({})
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Toggle the icon in the header.
-          let icon = event.target;
-          icon.innerText = icon.innerText === "❤️" ? "♡" : "❤️";
-          icon.classList.toggle("favorited");
-          // Optionally refresh the page or update the UI so that all website items in this category
-          // show as favorited/unfavorited.
-        } else {
-          Swal.fire("Error", data.message, "error");
-        }
-      })
-      .catch(error => console.error("Error:", error));
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Toggle the icon in the header.
+            let icon = event.target;
+            icon.innerText = icon.innerText === "❤️" ? "♡" : "❤️";
+            icon.classList.toggle("favorited");
+            // Optionally refresh the page or update the UI so that all website items in this category
+            // show as favorited/unfavorited.
+          } else {
+            Swal.fire("Error", data.message, "error");
+          }
+        })
+        .catch(error => console.error("Error:", error));
     }
 
     // Toggle an individual website's favorite status.
@@ -61,25 +61,25 @@
         },
         body: JSON.stringify({ url: websiteUrl })
       })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          let icon = event.target;
-          icon.innerText = icon.innerText === "❤️" ? "♡" : "❤️";
-          icon.classList.toggle("favorited");
-          // The category header's favorite icon should not be altered here.
-        } else {
-          Swal.fire("Error", data.message, "error");
-        }
-      })
-      .catch(error => console.error("Error:", error));
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            let icon = event.target;
+            icon.innerText = icon.innerText === "❤️" ? "♡" : "❤️";
+            icon.classList.toggle("favorited");
+            // The category header's favorite icon should not be altered here.
+          } else {
+            Swal.fire("Error", data.message, "error");
+          }
+        })
+        .catch(error => console.error("Error:", error));
     }
 
     // Function to add a website URL to the textarea.
     function addToTextarea(url) {
       const textarea = document.getElementById("website-url");
       const currentUrls = textarea.value.split("\n").map(u => u.trim());
-      const urlsToAdd = [ `www.${url}`,url]; // Add both www and non-www versions
+      const urlsToAdd = [`www.${url}`, url]; // Add both www and non-www versions
       urlsToAdd.forEach(u => {
         if (!currentUrls.includes(u)) {
           if (textarea.value.trim() === "") {
@@ -93,54 +93,54 @@
 
 
     document.getElementById("block-btn").addEventListener("click", function () {
-    checkPasswordProtection("block");
-});
+      checkPasswordProtection("block");
+    });
 
-document.getElementById("unblock-btn").addEventListener("click", function () {
-    checkPasswordProtection("unblock");
-});
+    document.getElementById("unblock-btn").addEventListener("click", function () {
+      checkPasswordProtection("unblock");
+    });
 
-function checkPasswordProtection(action) {
-    fetch("/get_protection_status")
+    function checkPasswordProtection(action) {
+      fetch("/get_protection_status")
         .then(response => response.json())
         .then(data => {
-            if (data.enabled) {
-                Swal.fire({
-                    title: "Enter Password",
-                    input: "password",
-                    showCancelButton: true
-                }).then(result => {
-                    if (result.value) {
-                        performAction(action, result.value);
-                    }
-                });
-            } else {
-                performAction(action);
-            }
+          if (data.enabled) {
+            Swal.fire({
+              title: "Enter Password",
+              input: "password",
+              showCancelButton: true
+            }).then(result => {
+              if (result.value) {
+                performAction(action, result.value);
+              }
+            });
+          } else {
+            performAction(action);
+          }
         });
-}
-
-function performAction(action, password = null) {
-    const website = document.getElementById("website-url").value.trim();
-    if (!website) {
-        Swal.fire("Error", "Please enter a website URL!", "error");
-        return;
     }
 
-    fetch(`/${action}`, {
+    function performAction(action, password = null) {
+      const website = document.getElementById("website-url").value.trim();
+      if (!website) {
+        Swal.fire("Error", "Please enter a website URL!", "error");
+        return;
+      }
+
+      fetch(`/${action}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ website, password })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
             Swal.fire("Success", data.message, "success");
-        } else {
+          } else {
             Swal.fire("Error", data.message, "error");
-        }
-    });
-}
+          }
+        });
+    }
 
 
   </script>
@@ -156,14 +156,17 @@ function performAction(action, password = null) {
     </header>
     <nav class="sidebar">
       <ul class="menu">
-                <li><a href="{{ url_for('auth.success')}}" > <i class="bi bi-house"></i><span>Home</span></a></li>
-                <li><a href="{{ url_for('auth.categories') }}" class="active"><i class="bi bi-grid"></i><span>Categories</span></a></li>
-                <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a></li>
-                <li><a href=""><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
-                <li><a href="{{ url_for('auth.password_protection') }}"> <i class="bi bi-lock"></i><span>Password Protection</span></a></li>
-                <li><a href="{{ url_for('auth.task_schedular') }}"><i class="bi bi-calendar"></i><span>Task Scheduler</span></a></li>
+        <li><a href="{{ url_for('auth.success')}}"> <i class="bi bi-house"></i><span>Home</span></a></li>
+        <li><a href="{{ url_for('auth.categories') }}" class="active"><i
+              class="bi bi-grid"></i><span>Categories</span></a></li>
+        <li><a href="{{ url_for('auth.favourites') }}"><i class="bi bi-star"></i><span>Favourites</span></a></li>
+        <li><a href="{{ url_for('auth.MFA') }}"><i class="bi bi-shield-lock"></i><span>Multi-Factor Authentication</span></a></li>
+        <li><a href="{{ url_for('auth.password_protection') }}"> <i class="bi bi-lock"></i><span>Password
+              Protection</span></a></li>
+        <li><a href="{{ url_for('auth.task_schedular') }}"><i class="bi bi-calendar"></i><span>Task Scheduler</span></a>
+        </li>
 
-              </ul>
+      </ul>
     </nav>
 
     <!-- Main Content -->
@@ -172,11 +175,11 @@ function performAction(action, password = null) {
         <h1>Website Blocker</h1>
         <div>
           {% if session.get('user_id') %}
-            <span class="welcome-text">Welcome, {{ session.get('user_name') }}!</span>
-            <a href="{{ url_for('auth.signout') }}" class="signout">Sign Out</a>
+          <span class="welcome-text">Welcome, {{ session.get('user_name') }}!</span>
+          <a href="{{ url_for('auth.signout') }}" class="signout">Sign Out</a>
           {% else %}
-            <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
-            <a href="{{ url_for('auth.signup') }}" class="signup">Sign Up</a>
+          <a href="{{ url_for('auth.signin') }}" class="signin">Sign In</a>
+          <a href="{{ url_for('auth.signup') }}" class="signup">Sign Up</a>
           {% endif %}
         </div>
       </header>
@@ -211,68 +214,70 @@ function performAction(action, password = null) {
         </form>
       </section>
       {% endif %}
-
       <!-- Custom Categories Section -->
       <section id="custom-categories">
         <h2>Your Custom Categories</h2>
         <br>
         {% if user_custom_categories %}
-          {% for category in user_custom_categories %}
-          <div class="category">
-            <h3>
-              {{ category.title }}
-              <!-- Category-level toggle: Clicking here toggles the entire category favorite -->
-              <span class="fav-icon" onclick="toggleCategoryFavorite(event, '{{ category.id }}', '{{ category.type }}')">
-                {{ '❤️' if category.id in user_favorites else '♡' }}
+        {% for category in user_custom_categories %}
+        <div class="category">
+          <h3>
+            {{ category.title }}
+            <!-- Category-level toggle: Clicking here toggles the entire category favorite -->
+            <span class="fav-icon" onclick="toggleCategoryFavorite(event, '{{ category.id }}', 'custom')">
+              {{ '❤️' if category.id in user_favorites else '♡' }}
+            </span>
+          </h3>
+          <ul>
+            {% for website in category.websites %}
+            <li>
+              <a href="{{ website.url }}" target="_blank">{{ website.name }}</a>
+              <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
+              <!-- Individual website toggle: Clicking toggles only that website's favorite state -->
+              <span class="fav-icon"
+                onclick="toggleWebsiteFavorite(event, '{{ category.id }}', 'custom', '{{ website.url }}')">
+                {{ '❤️' if website.url in favorite_urls.get(category.title, []) else '♡' }}
               </span>
-            </h3>
-            <ul>
-              {% for website in category.websites %}
-              <li>
-                {{ website.name }}
-                <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
-                <!-- Individual website toggle: Clicking toggles only that website's favorite state -->
-                <span class="fav-icon" onclick="toggleWebsiteFavorite(event, '{{ category.id }}', '{{ category.type }}', '{{ website.url }}')">
-                  {{ '❤️' if website.url in favorite_urls.get(category.title, []) else '♡' }}
-                </span>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endfor %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
         {% else %}
-          <p>No custom categories added yet.</p>
+        <p>No custom categories added yet.</p>
         {% endif %}
       </section>
+
 
       <!-- Default Categories Section -->
       <section id="default-categories">
         <h2>Default Website Categories</h2>
         <br>
         {% if default_categories %}
-          {% for category in default_categories %}
-          <div class="category">
-            <h3>
-              {{ category.title }}
-              <span class="fav-icon" onclick="toggleCategoryFavorite(event, '{{ category.id }}', '{{ category.type }}')">
-                {{ '❤️' if category.id in user_favorites else '♡' }}
+        {% for category in default_categories %}
+        <div class="category">
+          <h3>
+            {{ category.title }}
+            <span class="fav-icon" onclick="toggleCategoryFavorite(event, '{{ category.id }}', '{{ category.type }}')">
+              {{ '❤️' if category.id in user_favorites else '♡' }}
+            </span>
+          </h3>
+          <ul>
+            {% for website in category.websites %}
+            <li>
+              {{ website.name }}
+              <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
+              <span class="fav-icon"
+                onclick="toggleWebsiteFavorite(event, '{{ category.id }}', '{{ category.type }}', '{{ website.url }}')">
+                {{ '❤️' if website.url in favorite_urls.get(category.title, []) else '♡' }}
               </span>
-            </h3>
-            <ul>
-              {% for website in category.websites %}
-              <li>
-                {{ website.name }}
-                <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
-                <span class="fav-icon" onclick="toggleWebsiteFavorite(event, '{{ category.id }}', '{{ category.type }}', '{{ website.url }}')">
-                  {{ '❤️' if website.url in favorite_urls.get(category.title, []) else '♡' }}
-                </span>
-              </li>
-              {% endfor %}
-            </ul>
-          </div>
-          {% endfor %}
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
         {% else %}
-          <p>No default categories available.</p>
+        <p>No default categories available.</p>
         {% endif %}
       </section>
     </div>

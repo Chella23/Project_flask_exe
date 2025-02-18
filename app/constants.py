@@ -38,8 +38,7 @@ class Constants:
     
     """Email"""
     OTP_SUBJECT = "Your OTP Code"
-    OTP_BODY = """To continue setting up your WebsiteBlocker account please verify your account with the code below 
-    {}"""
+    OTP_BODY = """WebsiteBlocker please verify email your code is: {}"""
     EMAIL_SENDER = "chellaamap@gmail.com"
     
 @dataclasses.dataclass
