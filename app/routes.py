@@ -685,6 +685,7 @@ def delete_task(task_id):
     else:
         return jsonify({"success": False, "message": "Error deleting task"}), 500
 
+
 @auth_bp.route("/get_mfa_status", methods=["GET"])
 def get_mfa_status():
     if "user_id" not in session:
@@ -692,23 +693,29 @@ def get_mfa_status():
 
     user_id = session["user_id"]
     mfa = Mfa.query.filter_by(user_id=user_id).first()
+    # Return true only if an MFA record exists and is enabled.
+    return jsonify({"mfa_enabled": bool(mfa and mfa.mfa_enabled)})
 
-    return jsonify({"mfa_enabled": bool(mfa)})  # Return True if MFA record exists
+
 @auth_bp.route("/toggle_mfa", methods=["POST"])
 def toggle_mfa():
+    """
+    This endpoint is used for enabling MFA once the user has completed OTP verification
+    and provided a valid six-digit PIN.
+    """
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
     user_id = session["user_id"]
     data = request.get_json()
     enable_mfa = data.get("enable")
-    
-    # Fetch existing MFA record
+
+    # Fetch any existing MFA record
     mfa = Mfa.query.filter_by(user_id=user_id).first()
 
     if enable_mfa:
+        # When enabling, we expect a valid 6-digit PIN (OTP is already verified in a separate flow)
         six_digit_pin = data.get("six_digit_pin")
-        # Validate PIN
         if not six_digit_pin or not six_digit_pin.isdigit() or len(six_digit_pin) != 6:
             return jsonify({"error": "Invalid PIN. Must be a 6-digit number."}), 400
 
@@ -723,14 +730,15 @@ def toggle_mfa():
 
         db.session.commit()
         return jsonify({"success": True, "message": "MFA enabled successfully"})
-    
-    # If disabling MFA
+
     else:
+        # When disabling MFA, remove the record (after OTP & PIN verification on the frontend)
         if mfa:
             db.session.delete(mfa)
             db.session.commit()
-        return jsonify({"success": True, "message": "MFA disabled successfully"})
-
+            return jsonify({"success": True, "message": "MFA disabled successfully"})
+        else:
+            return jsonify({"error": "MFA is not enabled"}), 400
 
 @auth_bp.route("/verify_mfa", methods=["POST"])
 def verify_mfa():
@@ -738,68 +746,44 @@ def verify_mfa():
         return jsonify({"error": "Unauthorized"}), 401
 
     data = request.get_json()
-    otp = data.get("otp")  # OTP entered by user
-    six_digit_pin = data.get("six_digit_pin")  # PIN (if needed)
+    otp = data.get("otp")
+    six_digit_pin = data.get("six_digit_pin")
 
     user_id = session["user_id"]
     mfa = Mfa.query.filter_by(user_id=user_id).first()
 
-    # Check if OTP exists in session
     if "otp" not in session or "otp_expiry" not in session:
         return jsonify({"error": "OTP expired or not found. Please request a new one."}), 400
 
-    # Check OTP expiry
-    otp_expiry = session.get("otp_expiry")
-    if time.time() > otp_expiry:
-        # Clear OTP session data after expiry
+    if time.time() > session.get("otp_expiry"):
         session.pop("otp", None)
         session.pop("otp_expiry", None)
         return jsonify({"error": "OTP expired. Please request a new one."}), 400
 
-    # Ensure OTP is entered correctly (converted to integer for comparison)
     try:
-        entered_otp = int(otp)  # Convert to integer to compare
+        entered_otp = int(otp)
     except ValueError:
         return jsonify({"error": "Invalid OTP format. OTP should be a 6-digit number."}), 400
 
-    # Verify the OTP
     if entered_otp != session.get("otp"):
         return jsonify({"error": "Invalid OTP"}), 400
 
-    # Clear OTP from session after successful verification
     session.pop("otp", None)
     session.pop("otp_expiry", None)
 
-    # If OTP is correct but MFA is not set up yet, ask for PIN setup
     if not mfa:
         return jsonify({"success": True, "message": "OTP verified. Please set your 6-digit PIN."})
 
-    # If MFA is set, validate 6-digit PIN if provided
-    if six_digit_pin:
-        # Hash the entered PIN and compare it with the stored hashed PIN
-        hashed_pin = mfa.six_digit_pin.encode('utf-8')  # Assuming stored pin is already hashed
+    # If user is disabling MFA, return a special message to trigger PIN input in the frontend.
+    return jsonify({"success": True, "message": "OTP verified. Please enter your 6-digit PIN to disable MFA.", "require_pin": True})
 
-        if not bcrypt.checkpw(six_digit_pin.encode("utf-8"), hashed_pin):  # Hash the entered PIN and compare
-            return jsonify({"error": "Incorrect 6-digit PIN"}), 400
-
-        return jsonify({"success": True, "message": "MFA verification successful"})
-
-    return jsonify({"error": "Please enter your 6-digit PIN to complete the process."}), 400
-
-
-    
-@auth_bp.route("/get_user_email", methods=["GET"])
-def get_user_email():
-    if "user_id" not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    user = User.query.get(session["user_id"])
-    if user:
-        return jsonify({"email": user.email})
-    return jsonify({"error": "User not found"}), 404
 
 @auth_bp.route("/set_pin", methods=["POST"])
 def set_pin():
+    """
+    This endpoint is used when the user sets their six-digit PIN during MFA setup.
+    It creates or updates the MFA record with the provided PIN.
+    """
     if "user_id" not in session:
         return jsonify({"error": "Unauthorized"}), 401
 
@@ -810,28 +794,57 @@ def set_pin():
         return jsonify({"error": "PIN must be a 6-digit number"}), 400
 
     hashed_pin = bcrypt.hashpw(pin.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
     user_id = session["user_id"]
-    existing_mfa = Mfa.query.filter_by(user_id=user_id).first()
+    mfa = Mfa.query.filter_by(user_id=user_id).first()
 
-    if existing_mfa:
-        existing_mfa.six_digit_pin = hashed_pin
+    if mfa:
+        mfa.six_digit_pin = hashed_pin
+        mfa.mfa_enabled = True
     else:
-        new_mfa = Mfa(user_id=user_id, six_digit_pin=hashed_pin)
-        db.session.add(new_mfa)
+        mfa = Mfa(user_id=user_id, mfa_enabled=True, six_digit_pin=hashed_pin)
+        db.session.add(mfa)
 
     db.session.commit()
-
     return jsonify({"success": True, "message": "MFA enabled successfully!"})
 
 @auth_bp.route("/disable_mfa", methods=["POST"])
 def disable_mfa():
-    user = User.query.get(session['user_id'])
-    user.mfa_enabled = False
-    user.pin = None
-    db.session.commit()
-    return jsonify({"success": True, "message": "MFA disabled"})
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
 
+    data = request.get_json()
+    pin = data.get("pin")  # Get the PIN from frontend
+
+    user_id = session["user_id"]
+    mfa = Mfa.query.filter_by(user_id=user_id).first()
+
+    if not mfa or not mfa.six_digit_pin:  # Check if MFA is not set or PIN is missing
+        return jsonify({"error": "MFA is not enabled or PIN is missing"}), 400
+
+    # Verify the entered PIN against the stored hashed PIN
+    stored_hashed = mfa.six_digit_pin.encode('utf-8')
+
+    try:
+        if not bcrypt.checkpw(pin.encode("utf-8"), stored_hashed):
+            return jsonify({"error": "Incorrect 6-digit PIN"}), 400  # Reject incorrect PIN
+    except ValueError:  # Handle invalid hash (if data is corrupted)
+        return jsonify({"error": "Invalid stored PIN. Please reset MFA."}), 500
+
+    db.session.delete(mfa)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "MFA disabled successfully"})
+
+
+
+@auth_bp.route("/get_user_email", methods=["GET"])
+def get_user_email():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    user = User.query.get(session["user_id"])
+    if user:
+        return jsonify({"email": user.email})
+    return jsonify({"error": "User not found"}), 404
 
 
 @auth_bp.route("/MFA", methods=["GET"])

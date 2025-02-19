@@ -157,7 +157,7 @@ class Mfa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete="CASCADE"), unique=True, nullable=False)
     mfa_enabled = db.Column(db.Boolean, default=False)  # MFA toggle
-    six_digit_pin = db.Column(db.String(6), nullable=True)  # Encrypted 6-digit PIN (to be hashed)
+    six_digit_pin = db.Column(db.String(100), nullable=True)  # Encrypted 6-digit PIN (to be hashed)
     otp_attempts = db.Column(db.Integer, default=0)  # Number of OTP attempts
     otp_timestamp = db.Column(db.DateTime, nullable=True)  # Last OTP sent time
 

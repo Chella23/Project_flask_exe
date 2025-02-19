@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
         menuToggle.classList.toggle("active");
     });
 });
-
 document.addEventListener("DOMContentLoaded", function () {
     const blockBtn = document.getElementById("block-btn");
     const unblockBtn = document.getElementById("unblock-btn");
@@ -37,7 +36,6 @@ document.addEventListener("DOMContentLoaded", function () {
             title: "Enter Password",
             input: "password",
             inputPlaceholder: "Enter your password",
-            inputAttributes: { autocapitalize: "off" },
             showCancelButton: true,
             confirmButtonText: "Submit",
             preConfirm: (password) => {
@@ -50,6 +48,88 @@ document.addEventListener("DOMContentLoaded", function () {
         return password;
     }
 
+    async function isMFAEnabled() {
+        try {
+            const response = await fetch("/get_mfa_status");
+            const data = await response.json();
+            return data.mfa_enabled;
+        } catch (error) {
+            console.error("Error fetching MFA status:", error);
+            return false;
+        }
+    }
+
+    async function sendOTP() {
+        const response = await fetch("/get_user_email");
+        const data = await response.json();
+        if (!data.email) {
+            Swal.fire("Error", "Unable to fetch email for OTP.", "error");
+            return null;
+        }
+
+        await fetch("/send_otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: data.email })
+        });
+
+        return await askForOTP();
+    }
+
+    async function askForOTP() {
+        const { value: otp } = await Swal.fire({
+            title: "Enter OTP",
+            input: "text",
+            inputAttributes: { maxlength: 6, pattern: "[0-9]*", inputmode: "numeric" },
+            showCancelButton: true,
+            confirmButtonText: "Verify"
+        });
+
+        if (!otp) return null;
+
+        const response = await fetch("/verify_mfa", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ otp })
+        });
+
+        const data = await response.json();
+        if (!data.success) {
+            Swal.fire("Error", data.error, "error");
+            return null;
+        }
+
+        return await askForPIN();
+    }
+
+    async function askForPIN() {
+        const { value: pin } = await Swal.fire({
+            title: "Enter 6-Digit PIN",
+            input: "password",
+            inputAttributes: { maxlength: 6, pattern: "[0-9]*", inputmode: "numeric" },
+            showCancelButton: true,
+            confirmButtonText: "Verify"
+        });
+
+        return pin;
+    }
+
+    async function authenticateUser() {
+        let password = "", pin = "";
+
+        if (await isPasswordProtected()) {
+            password = await requestPassword();
+            if (!password) return null;
+        }
+
+        if (await isMFAEnabled()) {
+            pin = await sendOTP();
+            if (!pin) return null;
+        }
+
+        return { password, pin };
+    }
+
     async function blockWebsite() {
         const websiteInput = document.getElementById("website-url").value.trim();
         if (!websiteInput) {
@@ -57,26 +137,20 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Split websites by newline and filter valid URLs
         const websites = websiteInput.split("\n").map(url => url.trim()).filter(url => isValidURL(url));
-
         if (websites.length === 0) {
             Swal.fire("Error", "Please enter valid website URLs.", "error");
             return;
         }
 
-        let password = "";
-        if (await isPasswordProtected()) {
-            password = await requestPassword();
-            if (!password) return;
-        }
+        const auth = await authenticateUser();
+        if (!auth) return;
 
-        // Send all websites in one request
         try {
             const response = await fetch("/block", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ websites, password }) // Send all at once
+                body: JSON.stringify({ websites, ...auth })
             });
 
             const data = await response.json();
@@ -100,23 +174,19 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const websites = websiteInput.split("\n").map(url => url.trim()).filter(url => isValidURL(url));
-
         if (websites.length === 0) {
             Swal.fire("Error", "Please enter valid website URLs.", "error");
             return;
         }
 
-        let password = "";
-        if (await isPasswordProtected()) {
-            password = await requestPassword();
-            if (!password) return;
-        }
+        const auth = await authenticateUser();
+        if (!auth) return;
 
         try {
             const response = await fetch("/unblock", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ websites, password }) // Send all at once
+                body: JSON.stringify({ websites, ...auth })
             });
 
             const data = await response.json();
@@ -132,28 +202,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
-    async function fetchBlockedWebsites() {
-        try {
-            const response = await fetch("/blocked_websites");
-            return await response.json();
-        } catch (error) {
-            console.error("Error fetching blocked websites:", error);
-            return [];
-        }
-    }
-
-    
-
     async function updateBlockedList() {
         const blockedList = document.getElementById("blocked-list");
         blockedList.innerHTML = "";
 
-        const blockedWebsites = await fetchBlockedWebsites();
-        blockedWebsites.forEach(website => {
-            const li = document.createElement("li");
-            li.textContent = website;
-            blockedList.appendChild(li);
-        });
+        try {
+            const response = await fetch("/blocked_websites");
+            const blockedWebsites = await response.json();
+
+            blockedWebsites.forEach(website => {
+                const li = document.createElement("li");
+                li.textContent = website;
+                blockedList.appendChild(li);
+            });
+        } catch (error) {
+            console.error("Error fetching blocked websites:", error);
+        }
     }
 
     blockBtn.addEventListener("click", blockWebsite);
@@ -161,6 +225,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     updateBlockedList();
 });
+
 
 
 
