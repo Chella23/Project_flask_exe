@@ -7,8 +7,8 @@
 
 body {
     font-family: 'Roboto', Arial, sans-serif;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a40); /* Dark theme gradient */
-    color: #fff;
+    background: linear-gradient(135deg, #1e1e2f, #2a2a40); /* Dark theme gradient remains */
+    color: #333;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,18 +16,19 @@ body {
     overflow: hidden;
 }
 
-/* Glass-like Container Styling */
+/* White Container Styling (Updated to match custom category style) */
 .container {
-    background: rgba(0, 0, 0, 0.1); /* Semi-transparent background */
-    backdrop-filter: blur(12px);
+    background: #fff;
+    color: #333;
     padding: 30px;
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     text-align: center;
     width: 90%;
     max-width: 400px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(0, 0, 0, 0.3);
     transition: transform 0.3s, box-shadow 0.3s;
+    margin: auto;
 }
 
 .container:hover {
@@ -41,21 +42,21 @@ input {
     margin: 15px 0;
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background: #fff;
     font-size: 16px;
     outline: none;
-    color: #fff;
+    color: #333;
     transition: border 0.3s, box-shadow 0.3s;
 }
 
 input::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(0, 0, 0, 0.6);
 }
 
 input:focus {
-    border-color: #6a11cb; /* Focus border color */
-    box-shadow: 0 0 8px rgba(106, 17, 203, 0.5);
+    border-color: #6272ff;
+    box-shadow: 0 0 8px rgba(98, 114, 255, 0.5);
 }
 
 /* OTP Input Field */
@@ -64,29 +65,29 @@ input:focus {
     margin: 15px 0;
     padding: 12px;
     border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    background: #fff;
     font-size: 16px;
     outline: none;
-    color: #fff;
+    color: #333;
     transition: border 0.3s, box-shadow 0.3s;
 }
 
 #otp::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(0, 0, 0, 0.6);
 }
 
 #otp:focus {
-    border-color: #6a11cb; /* Focus border color */
-    box-shadow: 0 0 8px rgba(106, 17, 203, 0.5);
+    border-color: #6272ff;
+    box-shadow: 0 0 8px rgba(98, 114, 255, 0.5);
 }
 
 /* Button Styling */
 button {
     width: auto;
     padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 12px;
     font-size: 16px;
@@ -97,21 +98,21 @@ button {
 }
 
 button:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 button:active {
     transform: translateY(0);
 }
 
-/* Verify OTP Button */
+/* Verify OTP Button (Same as default button) */
 #verify-otp-btn {
     width: auto;
     padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 12px;
     font-size: 16px;
@@ -122,21 +123,21 @@ button:active {
 }
 
 #verify-otp-btn:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 #verify-otp-btn:active {
     transform: translateY(0);
 }
 
-/* Resend Button */
+/* Resend Button (Same as default button) */
 #resend-btn {
     width: auto;
     padding: 12px 20px;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 12px;
     font-size: 16px;
@@ -147,9 +148,9 @@ button:active {
 }
 
 #resend-btn:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 #resend-btn:active {
@@ -162,8 +163,8 @@ a {
     text-decoration: none;
     padding: 12px 20px;
     margin: 15px 0;
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
-    color: white;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
     border: none;
     border-radius: 12px;
     font-size: 16px;
@@ -175,9 +176,9 @@ a {
 }
 
 a:hover {
-    background: linear-gradient(135deg, #6a11cb, #2575fc); /* Professional gradient */
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(106, 17, 203, 0.4);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
 
 a:active {
@@ -185,8 +186,8 @@ a:active {
 }
 
 a:visited {
-    color: white; /* Keeps the text white even after visit */
-    background: rgba(255, 255, 255, 0.1); /* Transparent background */
+    color: #fff;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
 }
 
 /* Add Subtle Animation */
@@ -222,7 +223,7 @@ a {
     }
 }
 
-/* Add Support for Larger Screens */
+/* Support for Larger Screens */
 @media (min-width: 1024px) {
     .container {
         max-width: 500px;

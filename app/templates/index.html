@@ -1,87 +1,195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to Website Blocker</title>
-    <link rel="stylesheet" href="/static/css/indexstyle.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Welcome to Website Blocker</title>
+  <!-- Latest Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="/static/css/indexstyle.css" />
+  <style>
+    /* Custom Font & Gradient Styles */
+    :root {
+      --gradient-header: linear-gradient(45deg, #ffffff, #e0e0e0);
+      --gradient-overview: linear-gradient(45deg, #8e44ad, #3498db);
+      --gradient-feature: linear-gradient(45deg, #3498db, #8e44ad);
+    }
+
+    /* Ensure key textual elements are bold and uppercased */
+    h1, h2, h3, .logo, .nav-links a, .try-button {
+      font-weight: 700 !important;
+      text-transform: uppercase;
+    }
+
+    /* Header H1 with gradient text */
+    header h1 {
+      font-size: 3.5rem;
+      background: var(--gradient-header);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Overview H2 with gradient text */
+    .overview h2 {
+      font-size: 2.5rem;
+      background: var(--gradient-overview);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Feature Item H3 with gradient text */
+    .feature-item h3 {
+      font-size: 1.5rem;
+      background: var(--gradient-feature);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Also style the navigation logo */
+    .logo {
+      font-size: 1.5rem;
+      color: var(--text-color);
+    }
+  </style>
 </head>
 <body>
-    <!-- Header Section -->
-    <header>
-        <div class="container">
-            <h1>Welcome to Website Blocker</h1>
-            <p>Take control of your online productivity with our powerful tools.</p>
+  <!-- Sticky Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+    <div class="container nav-container">
+      <a class="navbar-brand logo" href="#">Website Blocker</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+              aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarContent">
+        <ul class="navbar-nav ms-auto nav-links">
+          <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
+          <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+          <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Header Section -->
+  <header id="home" class="py-5 bg-primary text-white text-center">
+    <div class="container">
+      <h1>Welcome to Website Blocker</h1>
+      <p class="lead">Take control of your online productivity with our powerful tools.</p>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Overview Section -->
+    <section id="overview" class="py-5">
+      <div class="container">
+        <h2 class="mb-4 text-center">What is Website Blocker?</h2>
+        <p class="mb-4 text-center">
+          Website Blocker is an innovative platform designed to enhance productivity, manage distractions, 
+          and improve focus by giving you full control over your online experience. Explore our comprehensive 
+          suite of tools to block, categorize, and protect your digital environment.
+        </p>
+        <div class="text-center">
+          <a href="{{ url_for('auth.home') }}" class="btn btn-lg btn-outline-primary try-button">
+            Get Started Now
+          </a>
         </div>
-    </header>
+      </div>
+    </section>
 
-    <!-- Main Content -->
-    <main>
-        <!-- Overview Section -->
-        <section class="overview">
-            <div class="container">
-                <h2>What is Website Blocker?</h2>
-                <p>
-                    Website Blocker is an innovative platform designed to enhance productivity, 
-                    manage distractions, and improve focus by giving you full control over your 
-                    online experience. Explore our comprehensive suite of tools to block, categorize, 
-                    and protect your digital environment.
-                </p>
-                <a href="{{ url_for('auth.home') }}" class="try-button">Get Started Now</a>
+    <!-- Features Section -->
+    <section id="features" class="py-5 bg-light">
+      <div class="container">
+        <h2 class="mb-5 text-center">Our Features</h2>
+        <div class="row g-4">
+          <!-- Website Blocking -->
+          <div class="col-md-4">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-x-octagon-fill display-4 text-danger mb-3"></i>
+                <h3 class="card-title">Website Blocking</h3>
+                <p class="card-text">Block distracting websites to stay focused and productive.</p>
+              </div>
             </div>
-        </section>
-
-        <!-- Features Section -->
-        <section class="features">
-            <div class="container">
-                <h2>Our Features</h2>
-                <div class="feature-list">
-                    <div class="feature-item">
-                        <h3>Website Blocking</h3>
-                        <p>Block distracting websites to stay focused and productive.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Website Unblocking</h3>
-                        <p>Easily unblock websites when you need temporary access.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Categories</h3>
-                        <p>Organize blocked websites into categories for easier management.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Favourites</h3>
-                        <p>Mark your favorite websites for quick access and easy toggling.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Password Protection</h3>
-                        <p>Secure your website blocker settings with a strong password.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Multi-Factor Authentication (MFA)</h3>
-                        <p>Enhance security with an additional layer of authentication.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Scheduling</h3>
-                        <p>Set time-based schedules to block or unblock websites automatically.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Activity Reports</h3>
-                        <p>Track your productivity with detailed reports and insights.</p>
-                    </div>
-                    <div class="feature-item">
-                        <h3>Custom Blocking Rules</h3>
-                        <p>Create personalized blocking rules based on keywords or domains.</p>
-                    </div>
-                </div>
+          </div>
+          <!-- Website Unblocking -->
+          <div class="col-md-4">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-check2-circle display-4 text-success mb-3"></i>
+                <h3 class="card-title">Website Unblocking</h3>
+                <p class="card-text">Easily unblock websites when you need temporary access.</p>
+              </div>
             </div>
-        </section>
-    </main>
-
-    <!-- Footer Section -->
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Website Blocker. All Rights Reserved.</p>
+          </div>
+          <!-- Categories -->
+          <div class="col-md-4">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-grid-3x3-gap-fill display-4 text-primary mb-3"></i>
+                <h3 class="card-title">Categories</h3>
+                <p class="card-text">Organize blocked websites into categories for easier management.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Favourites -->
+          <div class="col-md-4">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-heart-fill display-4 text-danger mb-3"></i>
+                <h3 class="card-title">Favourites</h3>
+                <p class="card-text">Mark your favorite websites for quick access and easy toggling.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Password Protection -->
+          <div class="col-md-4">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-shield-lock-fill display-4 text-warning mb-3"></i>
+                <h3 class="card-title">Password Protection</h3>
+                <p class="card-text">Secure your website blocker settings with a strong password.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Multi-Factor Authentication -->
+          <div class="col-md-4">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-person-badge-fill display-4 text-info mb-3"></i>
+                <h3 class="card-title">MFA</h3>
+                <p class="card-text">Enhance security with an additional layer of authentication.</p>
+              </div>
+            </div>
+          </div>
+          <!-- Scheduling -->
+          <div class="col-md-4 mx-auto">
+            <div class="card h-100 text-center">
+              <div class="card-body">
+                <i class="bi bi-calendar2-check-fill display-4 text-secondary mb-3"></i>
+                <h3 class="card-title">Scheduling</h3>
+                <p class="card-text">Set time-based schedules to block or unblock websites automatically.</p>
+              </div>
+            </div>
+          </div>
         </div>
-    </footer>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer Section -->
+  <footer id="contact" class="py-4 bg-dark text-white text-center">
+    <div class="container">
+      <p class="mb-0">&copy; 2025 Website Blocker. All Rights Reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS Bundle (includes Popper) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

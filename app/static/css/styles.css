@@ -870,3 +870,72 @@ input.form-control:focus {
     }
 }
 
+/* Add Custom Category Section Styles */
+#add-custom-category {
+    background: #fff;
+    color: #333;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+#add-custom-category h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+#custom-category-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#custom-category-form label {
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#custom-category-form input[type="text"],
+#custom-category-form textarea {
+    padding: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    font-size: 16px;
+    color: #333;
+    background: #fff;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+#custom-category-form input[type="text"]::placeholder,
+#custom-category-form textarea::placeholder {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+#custom-category-form input[type="text"]:focus,
+#custom-category-form textarea:focus {
+    border-color: #6272ff;
+    box-shadow: 0 0 8px rgba(98, 114, 255, 0.5);
+    outline: none;
+}
+
+#custom-category-form button {
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+}
+
+#custom-category-form button:hover {
+    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
+}
