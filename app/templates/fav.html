@@ -186,10 +186,10 @@ function performAction(action, password = null) {
             </div>
           </form>
           <div id="blocked-websites">
-            <h2>Blocked Websites:</h2>
-            <ul id="blocked-list">
-              <!-- Dynamically populated -->
-            </ul>
+            <h2 id="history-header">
+              History <i id="history-toggle" class="bi bi-caret-down-fill"></i>
+            </h2>
+            <ul id="blocked-list" style="display: none;"></ul>
           </div>
         </section>
 

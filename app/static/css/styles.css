@@ -939,3 +939,12 @@ input.form-control:focus {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
+ /* Additional styling for collapsible history */
+    #history-header {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    #history-header i {
+      margin-left: 8px;
+    }

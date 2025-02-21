@@ -7,7 +7,6 @@
   <link rel="stylesheet" href="/static/css/styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
     // Flash message handling
@@ -48,7 +47,6 @@
       font-size: 16px;
       margin-right: 10px;
     }
-    /* Scheduler Container */
     .scheduler-container {
       background: #fff;
       padding: 25px;
@@ -59,15 +57,8 @@
     .scheduler-container h2 {
       margin-bottom: 20px;
     }
-    .form-section {
-      margin-bottom: 30px;
-    }
-    #oneTimeFields, #recurringFields {
-      margin-bottom: 15px;
-    }
-    /* Table styling for scheduled tasks */
-    #tasks-table {
-      margin-top: 20px;
+    .mb-3 {
+      margin-bottom: 1rem;
     }
   </style>
 </head>
@@ -198,12 +189,12 @@
       </section>
     </div>
   </div>
-  <!-- Include JavaScript -->
+  <!-- Include External JavaScript Files -->
   <script src="/static/js/app.js?v=2"></script>
   <script src="/static/js/script.js?v=2"></script>
   <script>
-    // Task Scheduler JS Code
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
+      // ----- Task Scheduler Functions with Authentication -----
       const taskFormBtn = document.getElementById("task-scheduler-form");
       const oneTimeFields = document.getElementById("oneTimeFields");
       const recurringFields = document.getElementById("recurringFields");
@@ -212,7 +203,7 @@
 
       // Toggle schedule type fields
       scheduleTypeRadios.forEach(radio => {
-        radio.addEventListener("change", function() {
+        radio.addEventListener("change", function () {
           if (this.value === "one-time") {
             oneTimeFields.style.display = "block";
             recurringFields.style.display = "none";
@@ -223,119 +214,216 @@
         });
       });
 
-      // Submit the scheduler form
-      taskFormBtn.addEventListener("click", async function(e) {
-        e.preventDefault();
-        const websitesInput = document.getElementById("scheduler-websites").value.trim();
-        if (!websitesInput) {
-          Swal.fire("Error", "Please enter at least one website URL.", "error");
-          return;
-        }
-        // The input may contain multiple lines
-        const website = websitesInput; // Send the entire textarea text; backend splits by newline.
-        const scheduleType = document.querySelector('input[name="scheduleType"]:checked').value;
-        let payload = { website, recurring: scheduleType === "recurring" };
-
-        if (scheduleType === "one-time") {
-          const blockDatetime = document.getElementById("block-datetime").value;
-          const unblockDatetime = document.getElementById("unblock-datetime").value;
-          if (!blockDatetime || !unblockDatetime) {
-            Swal.fire("Error", "Please enter both block and unblock datetime.", "error");
-            return;
+      // Authentication functions reused from block/unblock section
+      async function isPasswordProtected() {
+          try {
+              const response = await fetch("/get_protection_status");
+              const data = await response.json();
+              return data.enabled;
+          } catch (error) {
+              console.error("Error fetching password protection status:", error);
+              return false;
           }
-          payload.block_time = blockDatetime;
-          payload.unblock_time = unblockDatetime;
-        } else {
-          // Recurring: get selected days and times
-          const dayCheckboxes = document.querySelectorAll('input[type="checkbox"]');
-          let selectedDays = [];
-          dayCheckboxes.forEach(chk => {
-            if (chk.checked) selectedDays.push(chk.value);
+      }
+
+      async function requestPassword() {
+          const { value: password } = await Swal.fire({
+              title: "Enter Password",
+              input: "password",
+              inputPlaceholder: "Enter your password",
+              showCancelButton: true,
+              confirmButtonText: "Submit",
+              preConfirm: (password) => {
+                  if (!password) {
+                      Swal.showValidationMessage("Password is required");
+                  }
+                  return password;
+              },
           });
-          if (selectedDays.length === 0) {
-            Swal.fire("Error", "Please select at least one day for recurring tasks.", "error");
-            return;
-          }
-          payload.day_of_week = selectedDays.join(",");
-          const blockTime = document.getElementById("block-time").value;
-          const unblockTime = document.getElementById("unblock-time").value;
-          if (!blockTime || !unblockTime) {
-            Swal.fire("Error", "Please enter both block and unblock times.", "error");
-            return;
-          }
-          payload.block_time = blockTime;
-          payload.unblock_time = unblockTime;
-        }
+          return password;
+      }
 
-        try {
-          const response = await fetch("/add_task", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+      async function isMFAEnabled() {
+          try {
+              const response = await fetch("/get_mfa_status");
+              const data = await response.json();
+              return data.mfa_enabled;
+          } catch (error) {
+              console.error("Error fetching MFA status:", error);
+              return false;
+          }
+      }
+
+      async function sendOTP() {
+          const response = await fetch("/get_user_email");
+          const data = await response.json();
+          if (!data.email) {
+              Swal.fire("Error", "Unable to fetch email for OTP.", "error");
+              return null;
+          }
+          await fetch("/send_otp", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: data.email })
+          });
+          return await askForOTP();
+      }
+
+      async function askForOTP() {
+          const { value: otp } = await Swal.fire({
+              title: "Enter OTP",
+              input: "text",
+              inputAttributes: { maxlength: 6, pattern: "[0-9]*", inputmode: "numeric" },
+              showCancelButton: true,
+              confirmButtonText: "Verify"
+          });
+          if (!otp) return null;
+          const response = await fetch("/verify_mfa", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ otp })
           });
           const data = await response.json();
-          if (data.success) {
-            Swal.fire("Success", "Task scheduled successfully!", "success");
-            loadTasks();
-            document.getElementById("scheduler-websites").value = "";
-            taskFormBtn.form.reset();
-            oneTimeFields.style.display = "block";
-            recurringFields.style.display = "none";
-          } else {
-            Swal.fire("Error", data.message, "error");
+          if (!data.success) {
+              Swal.fire("Error", data.error, "error");
+              return null;
           }
-        } catch (error) {
-          console.error("Error scheduling task:", error);
-          Swal.fire("Error", "An error occurred while scheduling the task.", "error");
-        }
+          // After OTP verification, ask for the 6-digit PIN.
+          return await askForPIN();
+      }
+
+      async function askForPIN() {
+          const { value: pin } = await Swal.fire({
+              title: "Enter 6-Digit PIN",
+              input: "password",
+              inputAttributes: { maxlength: 6, pattern: "[0-9]*", inputmode: "numeric", autocomplete: "off" },
+              showCancelButton: true,
+              confirmButtonText: "Verify"
+          });
+          return pin;
+      }
+
+      async function authenticateUser() {
+          let password = "", pin = "";
+          if (await isPasswordProtected()) {
+              password = await requestPassword();
+              if (!password) return null;
+          }
+          if (await isMFAEnabled()) {
+              pin = await sendOTP();
+              if (!pin) return null;
+          }
+          return { password, pin };
+      }
+      // ----- End Authentication Functions -----
+
+      // Submit the scheduler form
+      taskFormBtn.addEventListener("click", async function(e) {
+          e.preventDefault();
+          const websitesInput = document.getElementById("scheduler-websites").value.trim();
+          if (!websitesInput) {
+              Swal.fire("Error", "Please enter at least one website URL.", "error");
+              return;
+          }
+          const website = websitesInput; // The backend will split by newline if needed.
+          const scheduleType = document.querySelector('input[name="scheduleType"]:checked').value;
+          let payload = { website, recurring: scheduleType === "recurring" };
+
+          if (scheduleType === "one-time") {
+              const blockDatetime = document.getElementById("block-datetime").value;
+              const unblockDatetime = document.getElementById("unblock-datetime").value;
+              if (!blockDatetime || !unblockDatetime) {
+                  Swal.fire("Error", "Please enter both block and unblock datetime.", "error");
+                  return;
+              }
+              payload.block_time = blockDatetime;
+              payload.unblock_time = unblockDatetime;
+          } else {
+              const dayCheckboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+              let selectedDays = Array.from(dayCheckboxes).map(chk => chk.value);
+              if (selectedDays.length === 0) {
+                  Swal.fire("Error", "Please select at least one day for recurring tasks.", "error");
+                  return;
+              }
+              payload.day_of_week = selectedDays.join(",");
+              const blockTime = document.getElementById("block-time").value;
+              const unblockTime = document.getElementById("unblock-time").value;
+              if (!blockTime || !unblockTime) {
+                  Swal.fire("Error", "Please enter both block and unblock times.", "error");
+                  return;
+              }
+              payload.block_time = blockTime;
+              payload.unblock_time = unblockTime;
+          }
+
+          const auth = await authenticateUser();
+          if (!auth) return;
+          try {
+              const response = await fetch("/add_task", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ ...payload, ...auth })
+              });
+              const data = await response.json();
+              if (data.success) {
+                  Swal.fire("Success", "Task scheduled successfully!", "success");
+                  loadTasks();
+                  document.getElementById("scheduler-websites").value = "";
+                  taskFormBtn.form.reset();
+                  oneTimeFields.style.display = "block";
+                  recurringFields.style.display = "none";
+              } else {
+                  Swal.fire("Error", data.message, "error");
+              }
+          } catch (error) {
+              console.error("Error scheduling task:", error);
+              Swal.fire("Error", "An error occurred while scheduling the task.", "error");
+          }
       });
 
       async function loadTasks() {
-        try {
-          const response = await fetch("/get_tasks");
-          const result = await response.json();
-          if (result.success && result.tasks) {
-            tasksTableBody.innerHTML = "";
-            result.tasks.forEach(task => {
-              const tr = document.createElement("tr");
-              let scheduleInfo = "";
-              if (task.recurring) {
-                scheduleInfo = `Recurring on ${task.day_of_week} at ${("0" + task.hour).slice(-2)}:${("0" + task.minute).slice(-2)}`;
-              } else if (task.run_date) {
-                scheduleInfo = `One-Time: ${new Date(task.run_date).toLocaleString()}`;
+          try {
+              const response = await fetch("/get_tasks");
+              const result = await response.json();
+              tasksTableBody.innerHTML = "";
+              if (result.success && result.tasks.length > 0) {
+                  result.tasks.forEach(task => {
+                      const tr = document.createElement("tr");
+                      let scheduleInfo = task.recurring
+                          ? `Recurring on ${task.day_of_week} at ${("0" + task.hour).slice(-2)}:${("0" + task.minute).slice(-2)}`
+                          : `One-Time: ${new Date(task.run_date).toLocaleString()}`;
+                      tr.innerHTML = `
+                          <td>${task.id}</td>
+                          <td>${task.website}</td>
+                          <td>${task.task_type === "block" ? "Block" : "Unblock"}</td>
+                          <td>${scheduleInfo}</td>
+                          <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Delete</button></td>
+                      `;
+                      tasksTableBody.appendChild(tr);
+                  });
+              } else {
+                  tasksTableBody.innerHTML = "<tr><td colspan='5'>No scheduled tasks.</td></tr>";
               }
-              tr.innerHTML = `
-                <td>${task.id}</td>
-                <td>${task.website}</td>
-                <td>${task.task_type === "block" ? "Block" : "Unblock"}</td>
-                <td>${scheduleInfo}</td>
-                <td><button class="btn btn-danger btn-sm" onclick="deleteTask(${task.id})">Delete</button></td>
-              `;
-              tasksTableBody.appendChild(tr);
-            });
-          } else {
-            tasksTableBody.innerHTML = "<tr><td colspan='5'>No scheduled tasks.</td></tr>";
+          } catch (error) {
+              console.error("Error loading tasks:", error);
           }
-        } catch (error) {
-          console.error("Error loading tasks:", error);
-        }
       }
 
-      window.deleteTask = async function(taskId) {
-        if (!confirm("Are you sure you want to delete this task?")) return;
-        try {
-          const response = await fetch(`/delete_task/${taskId}`, { method: "DELETE" });
-          const data = await response.json();
-          if (data.success) {
-            Swal.fire("Deleted", "Task deleted successfully!", "success");
-            loadTasks();
-          } else {
-            Swal.fire("Error", data.message, "error");
+      window.deleteTask = async function (taskId) {
+          if (!confirm("Are you sure you want to delete this task?")) return;
+          try {
+              const response = await fetch(`/delete_task/${taskId}`, { method: "DELETE" });
+              const data = await response.json();
+              if (data.success) {
+                  Swal.fire("Deleted", "Task deleted successfully!", "success");
+                  loadTasks();
+              } else {
+                  Swal.fire("Error", data.message, "error");
+              }
+          } catch (error) {
+              console.error("Error deleting task:", error);
+              Swal.fire("Error", "An error occurred while deleting the task.", "error");
           }
-        } catch (error) {
-          console.error("Error deleting task:", error);
-          Swal.fire("Error", "An error occurred while deleting the task.", "error");
-        }
       };
 
       loadTasks();

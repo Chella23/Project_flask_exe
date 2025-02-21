@@ -18,9 +18,10 @@ from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
-from .models import Mfa, db, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask
+from .models import Mfa, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask
 from sqlalchemy.orm import joinedload
 from dateutil import parser
+
 
 
 auth_bp = Blueprint("auth", __name__)
@@ -133,9 +134,8 @@ def verify_otp():
         return jsonify({"success": True, "message": Constants.OTP_VERIFIED})
 
     return jsonify({"error": Constants.INCORRECT_EXPIRED_OTP}), 400
-# -------------------------
-# Block/Unblock Website Updates
-# -------------------------
+
+# ... (other routes like signin, signup, etc.)
 
 @auth_bp.route('/block', methods=['POST'])
 def block_site():
@@ -153,17 +153,10 @@ def block_site():
     otp = data.get("otp")
     website_urls = data.get("websites") or []
 
-    if isinstance(website_urls, str):  
+    if isinstance(website_urls, str):
         website_urls = [website_urls.strip()]
 
-    # # Validate OTP if MFA is enabled
-    # if user.mfa_enabled:
-    #     if not otp or not verify_otp(otp):
-    #         return jsonify({"success": False, "message": "Invalid or expired OTP"}), 400
-    #     session.pop("otp", None)
-    #     session.pop("otp_expiry", None)
-
-    # Validate password if password protection is enabled
+    # Validate password if protection is enabled
     user_password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
     if user_password_entry and user_password_entry.enabled:
         if not password or not checkpw(password.encode("utf-8"), user_password_entry.password.encode("utf-8")):
@@ -177,6 +170,7 @@ def block_site():
         if not website_url or "." not in website_url:
             failed_websites.append(website_url)
             continue
+        # Call the helper function to block the website.
         success = block_website(website_url)
         if success:
             blocked_websites.append(website_url)
@@ -188,6 +182,7 @@ def block_site():
         "message": f"Websites blocked: {', '.join(blocked_websites)}" if blocked_websites else "No valid websites blocked.",
         "failed": failed_websites
     })
+
 
 @auth_bp.route('/unblock', methods=['POST'])
 def unblock_site():
@@ -205,17 +200,10 @@ def unblock_site():
     otp = data.get("otp")
     website_urls = data.get("websites") or []
 
-    if isinstance(website_urls, str):  
+    if isinstance(website_urls, str):
         website_urls = [website_urls.strip()]
 
-    # # Validate OTP if MFA is enabled
-    # if user.mfa_enabled:
-    #     if not otp or not verify_otp(otp):
-    #         return jsonify({"success": False, "message": "Invalid or expired OTP"}), 400
-    #     session.pop("otp", None)
-    #     session.pop("otp_expiry", None)
-
-    # Validate password if password protection is enabled
+    # Validate password if protection is enabled
     user_password_entry = PasswordProtection.query.filter_by(user_id=user_id).first()
     if user_password_entry and user_password_entry.enabled:
         if not password or not checkpw(password.encode("utf-8"), user_password_entry.password.encode("utf-8")):
@@ -240,6 +228,25 @@ def unblock_site():
         "message": f"Websites unblocked: {', '.join(unblocked_websites)}" if unblocked_websites else "No valid websites unblocked.",
         "failed": failed_websites
     })
+
+
+@auth_bp.route("/blocked_websites", methods=["GET"])
+def get_blocked_websites():
+    from app.models import WebsiteHistory, db
+    if "user_id" not in session:
+        return jsonify({"success": False, "message": "Unauthorized"}), 401
+    user_id = session["user_id"]
+    histories = WebsiteHistory.query.filter_by(user_id=user_id).order_by(WebsiteHistory.timestamp.desc()).all()
+    history_list = []
+    for h in histories:
+        history_list.append({
+            "id": h.id,
+            "website": h.website,
+            "action": h.action,
+            "timestamp": h.timestamp.isoformat()
+        })
+    return jsonify({"success": True, "tasks": history_list})
+
 # -------------------------
 # Categories Route
 # -------------------------

@@ -4,6 +4,7 @@ import socket
 import subprocess
 import shutil
 import time
+from flask import request
 import psutil
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -11,6 +12,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import json
 import re
+
 
 def is_password_protected():
     """
@@ -345,23 +347,33 @@ def modify_hosts_file(action, websites_text):
     except Exception as e:
         print(f"❌ Error modifying hosts file: {e}")
         return False
-
-
-
-def block_website(website_url):
+def block_website(website_url, user_id=None):
     """
-    Blocks a website by adding it to the hosts file and clearing caches.
+    Blocks a website by modifying the firewall and hosts file, clearing caches,
+    and storing the action in the database.
+    If user_id is not provided, attempt to retrieve it from session.
     """
-    success_firewall = block_firewall(website_url)
-    success_hosts = modify_hosts_file("block", website_url)
-    
+    from app.models import WebsiteHistory, db  # Import here to avoid circular imports
+    from flask import session
+    if user_id is None:
+        user_id = session.get("user_id")
+    if not user_id:
+        print("User not logged in.")
+        return False
+
+    # Create a history record.
+    new_history = WebsiteHistory(user_id=user_id, website=website_url, action="block")
+    db.session.add(new_history)
+    db.session.commit()
+
+    success_firewall = block_firewall(website_url)  # Your firewall-blocking function
+    success_hosts = modify_hosts_file("block", website_url)  # Your hosts file modification function
+
     clear_dns_cache()
     clear_browser_cache()
- 
-    #clear_chrome_dns_cache()
+    # Optionally: clear_chrome_dns_cache()
 
-    if success_firewall  and success_hosts:
-       
+    if success_firewall and success_hosts:
         print(f"✅ Website {website_url} has been successfully blocked.")
         return True
     else:
@@ -369,20 +381,32 @@ def block_website(website_url):
         return False
 
 
-def unblock_website(website_url):
+def unblock_website(website_url, user_id=None):
     """
-    Unblocks a website by removing it from the hosts file and clearing caches.
+    Unblocks a website by removing it from the firewall and hosts file, clearing caches,
+    and storing the action in the database.
+    If user_id is not provided, attempt to retrieve it from session.
     """
+    from app.models import WebsiteHistory, db
+    from flask import session
+    if user_id is None:
+        user_id = session.get("user_id")
+    if not user_id:
+        print("User not logged in.")
+        return False
+
+    new_history = WebsiteHistory(user_id=user_id, website=website_url, action="unblock")
+    db.session.add(new_history)
+    db.session.commit()
+
     success_firewall = unblock_firewall(website_url)
     success_hosts = modify_hosts_file("unblock", website_url)
-    
+
     clear_dns_cache()
     clear_browser_cache()
+    # Optionally: clear_chrome_dns_cache()
 
-    #clear_chrome_dns_cache()
-
-    if success_firewall  and success_hosts:
-
+    if success_firewall and success_hosts:
         print(f"✅ Website {website_url} has been successfully unblocked.")
         return True
     else:

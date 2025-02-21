@@ -35,7 +35,6 @@ def schedule_task(task):
     task.job_id = job.id
     db.session.commit()
     print(f"Scheduled task {task.id} for website {task.website} (job id: {job.id})")
-
 def execute_block_task(task_id):
     """
     Job function that retrieves the task from the DB and calls block_website.
@@ -45,7 +44,8 @@ def execute_block_task(task_id):
     with flask_app.app_context():
         task = ScheduledTask.query.get(task_id)
         if task and task.active:
-            success = block_website(task.website)
+            # Pass user_id explicitly so block_website does not use session.
+            success = block_website(task.website, user_id=task.user_id)
             print(f"[{datetime.now()}] Block task executed for {task.website}. Success: {success}")
 
 def execute_unblock_task(task_id):
@@ -57,7 +57,7 @@ def execute_unblock_task(task_id):
     with flask_app.app_context():
         task = ScheduledTask.query.get(task_id)
         if task and task.active:
-            success = unblock_website(task.website)
+            success = unblock_website(task.website, user_id=task.user_id)
             print(f"[{datetime.now()}] Unblock task executed for {task.website}. Success: {success}")
 
 def init_scheduler(app):
