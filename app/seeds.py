@@ -1,5 +1,24 @@
-from sqlalchemy import inspect
+from sqlalchemy import inspect, create_engine
+from sqlalchemy.engine.url import make_url
 from .models import db, DefaultCategory, DefaultWebsite
+import sys
+
+def ensure_database_exists(db_url):
+    """
+    Checks if the target database exists, and creates it if not.
+    """
+    try:
+        url = make_url(db_url)
+        database = url.database
+        # Remove the database name from the URL
+        url = url.set(database=None)
+        engine = create_engine(url)
+        with engine.connect() as connection:
+            connection.execute(f"CREATE DATABASE IF NOT EXISTS `{database}`")
+        print(f"✅ Database '{database}' exists or has been created successfully.")
+    except Exception as e:
+        print(f"❌ Error ensuring database exists: {e}")
+        sys.exit(1)
 
 def table_exists(table_name):
     """
@@ -29,9 +48,8 @@ def init_default_categories():
         print("✅ Default categories already exist. Skipping insertion.")
         return
 
-
     default_data = {
-        "Social Media 🟢": [
+        "Social Media": [
             ("Facebook", "facebook.com"),
             ("Twitter", "twitter.com"),
             ("Instagram", "instagram.com"),
@@ -43,7 +61,7 @@ def init_default_categories():
             ("Quora", "quora.com"),
             ("Tumblr", "tumblr.com")
         ],
-        "Streaming 🎥": [
+        "Streaming": [
             ("YouTube", "youtube.com"),
             ("Netflix", "netflix.com"),
             ("Hulu", "hulu.com"),
@@ -55,7 +73,7 @@ def init_default_categories():
             ("HBO", "hbo.com"),
             ("Vimeo", "vimeo.com")
         ],
-        "Shopping 🛒": [
+        "Shopping": [
             ("Amazon", "amazon.com"),
             ("eBay", "ebay.com"),
             ("Walmart", "walmart.com"),
@@ -67,7 +85,7 @@ def init_default_categories():
             ("Zara", "zara.com"),
             ("IKEA", "ikea.com")
         ],
-        "News 📰": [
+        "News": [
             ("CNN", "cnn.com"),
             ("BBC", "bbc.com"),
             ("NY Times", "nytimes.com"),
@@ -79,7 +97,7 @@ def init_default_categories():
             ("Forbes", "forbes.com"),
             ("Time", "time.com")
         ],
-        "Gaming 🎮": [
+        "Gaming": [
             ("Steam", "steampowered.com"),
             ("Epic Games", "epicgames.com"),
             ("Roblox", "roblox.com"),
@@ -91,7 +109,7 @@ def init_default_categories():
             ("Rockstar Games", "rockstargames.com"),
             ("EA", "ea.com")
         ],
-        "Education 📚": [
+        "Education": [
             ("Khan Academy", "khanacademy.org"),
             ("Coursera", "coursera.org"),
             ("Udemy", "udemy.com"),
@@ -103,7 +121,7 @@ def init_default_categories():
             ("Harvard", "harvard.edu"),
             ("Codecademy", "codecademy.com")
         ],
-        "AI Tools 🤖": [
+        "AI Tools": [
             ("ChatGPT", "chat.openai.com"),
             ("Bard", "bard.google.com"),
             ("Hugging Face", "huggingface.co"),
@@ -115,7 +133,7 @@ def init_default_categories():
             ("ElevenLabs", "elevenlabs.io"),
             ("Stability AI", "stability.ai")
         ],
-        "Finance 💰": [
+        "Finance": [
             ("PayPal", "paypal.com"),
             ("Stripe", "stripe.com"),
             ("Bank of America", "bankofamerica.com"),
@@ -127,7 +145,7 @@ def init_default_categories():
             ("Nasdaq", "nasdaq.com"),
             ("Forbes Money", "forbes.com/money")
         ],
-        "Health 🏥": [
+        "Health": [
             ("WebMD", "webmd.com"),
             ("Mayo Clinic", "mayoclinic.org"),
             ("Healthline", "healthline.com"),
@@ -139,7 +157,7 @@ def init_default_categories():
             ("MedlinePlus", "medlineplus.gov"),
             ("Drugs.com", "drugs.com")
         ],
-        "Productivity 📌": [
+        "Productivity": [
             ("Notion", "notion.so"),
             ("Trello", "trello.com"),
             ("Asana", "asana.com"),
@@ -158,17 +176,16 @@ def init_default_categories():
         db.session.add(category)
         db.session.flush()  # Flush to get the new category ID
 
-        # For each website, add both the base URL and a "www" version.
+        # For each website, insert the base URL only if it doesn't already exist.
         for name, base_url in websites:
-            # Without www
-            website1 = DefaultWebsite(
-                category_id=category.id,
-                name=name,
-                url=base_url
-            )
-         
-            db.session.add(website1)
-
+            existing = DefaultWebsite.query.filter_by(url=base_url).first()
+            if not existing:
+                website1 = DefaultWebsite(
+                    category_id=category.id,
+                    name=name,
+                    url=base_url
+                )
+                db.session.add(website1)
 
     db.session.commit()
     print("Default categories and websites have been initialized.")
@@ -177,5 +194,22 @@ def check_and_initialize():
     """
     Ensures all tables exist and inserts default data if needed.
     """
+    # Ensure the database exists (pass the SQLALCHEMY_DATABASE_URI from your config)
+    from flask import current_app
+    db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI")
+    ensure_database_exists(db_url)
     create_tables()
     init_default_categories()
+
+def safe_print(s):
+    """
+    Print text to console, removing or replacing un-encodable characters if needed.
+    """
+    try:
+        print(s)
+    except UnicodeEncodeError:
+        fallback = s.encode("ascii", "replace").decode("ascii")
+        print(fallback)
+
+# Then use safe_print instead of print
+safe_print("Operation successful!")

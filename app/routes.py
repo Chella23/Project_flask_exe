@@ -28,6 +28,7 @@ auth_bp = Blueprint("auth", __name__)
 
 @auth_bp.route("/")
 def index():
+    
     return render_template(Constants.INDEX_PAGE)
 
 @auth_bp.route("/home")

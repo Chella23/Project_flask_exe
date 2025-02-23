@@ -33,9 +33,9 @@ def clear_dns_cache():
             subprocess.run(["sudo", "systemd-resolve", "--flush-caches"], check=True)
         elif platform.system() == "Darwin":  # macOS
             subprocess.run(["sudo", "dscacheutil", "-flushcache"], check=True)
-        print("✅ DNS cache cleared successfully.")
+        print("DNS cache cleared successfully.")
     except Exception as e:
-        print(f"❌ Error clearing DNS cache: {e}")
+        print(f"Error clearing DNS cache: {e}")
 
 
 def clear_chrome_dns_cache():
@@ -52,7 +52,7 @@ def clear_chrome_dns_cache():
         # Locate ChromeDriver automatically
         chrome_driver_path = shutil.which("chromedriver")
         if not chrome_driver_path:
-            raise FileNotFoundError("⚠️ ChromeDriver not found! Install it or specify its path.")
+            raise FileNotFoundError("ChromeDriver not found! Install it or specify its path.")
 
         service = Service(chrome_driver_path)
 
@@ -64,10 +64,10 @@ def clear_chrome_dns_cache():
         # Click the "Clear host cache" button
         clear_button = driver.find_element(By.XPATH, '//*[@id="dns-view"]/div[2]/button')
         clear_button.click()
-        print("✅ Chrome DNS cache cleared successfully.")
+        print("Chrome DNS cache cleared successfully.")
         driver.quit()
     except Exception as e:
-        print(f"❌ Error clearing Chrome DNS cache: {e}")
+        print(f"Error clearing Chrome DNS cache: {e}")
 
 
 def clear_browser_cache():
@@ -104,9 +104,9 @@ def clear_browser_cache():
             if os.path.exists(full_path):
                 try:
                     shutil.rmtree(full_path)
-                    print(f"✅ Chrome cache cleared: {full_path}")
+                    print(f"Chrome cache cleared: {full_path}")
                 except PermissionError:
-                    print(f"⚠️ Cannot delete some files in: {full_path}. Close Chrome and retry.")
+                    print(f"Cannot delete some files in: {full_path}. Close Chrome and retry.")
 
         # Clear Firefox cache
         if os.path.exists(firefox_cache_base):
@@ -115,13 +115,13 @@ def clear_browser_cache():
                 if os.path.exists(profile_cache):
                     try:
                         shutil.rmtree(profile_cache)
-                        print(f"✅ Firefox cache cleared for profile: {profile}.")
+                        print(f"Firefox cache cleared for profile: {profile}.")
                     except PermissionError:
-                        print(f"⚠️ Cannot delete some files in: {profile_cache}. Close Firefox and retry.")
+                        print(f"Cannot delete some files in: {profile_cache}. Close Firefox and retry.")
 
-        print("✅ Browser cache cleared successfully.")
+        print("Browser cache cleared successfully.")
     except Exception as e:
-        print(f"❌ Error clearing browser cache: {e}")
+        print(f"Error clearing browser cache: {e}")
 
 
 def resolve_ips(website):
@@ -246,9 +246,9 @@ def unblock_firewall(websites):
             cmd = ["netsh", "advfirewall", "firewall", "delete", "rule", f"name={rule_name}"]
             try:
                 subprocess.run(cmd, check=True)
-                print(f"✅ Windows Firewall rule removed for {website}.")
+                print(f"Windows Firewall rule removed for {website}.")
             except subprocess.CalledProcessError as e:
-                print(f"❌ Error removing firewall rule for {website}: {e}")
+                print(f"Error removing firewall rule for {website}: {e}")
                 success = False
 
         elif system == "Linux":
@@ -268,25 +268,25 @@ def unblock_firewall(websites):
                 blocked_ips = re.findall(pattern, output)
 
                 if not blocked_ips:
-                    print(f"⚠️ No iptables rules found for {website}.")
+                    print(f"No iptables rules found for {website}.")
                     continue
 
                 # Remove only the rules that were previously added
                 for ip in blocked_ips:
                     cmd = ["sudo", "iptables", "-D", "OUTPUT", "-d", ip, "-j", "DROP"]
                     subprocess.run(cmd, check=True)
-                    print(f"✅ iptables rule removed for {website} ({ip}).")
+                    print(f"iptables rule removed for {website} ({ip}).")
 
             except subprocess.CalledProcessError as e:
-                print(f"❌ Error removing iptables rules for {website}: {e}")
+                print(f"Error removing iptables rules for {website}: {e}")
                 success = False
 
         elif system == "Darwin":
-            print("⚠️ macOS firewall unblocking is not implemented. Consider using pf.")
+            print("macOS firewall unblocking is not implemented. Consider using pf.")
             success = False
 
         else:
-            print("⚠️ Unsupported operating system for firewall unblocking.")
+            print("Unsupported operating system for firewall unblocking.")
             success = False
 
     return success
@@ -337,15 +337,15 @@ def modify_hosts_file(action, websites_text):
             file.writelines(lines)
             file.truncate()
 
-        print(f"✅ Hosts file updated successfully for the provided websites.")
+        print(f"Hosts file updated successfully for the provided websites.")
         return True
 
     except PermissionError:
-        print(f"❌ Permission error: Run this script as administrator to modify {hosts_path}.")
+        print(f"Permission error: Run this script as administrator to modify {hosts_path}.")
         return False
 
     except Exception as e:
-        print(f"❌ Error modifying hosts file: {e}")
+        print(f"Error modifying hosts file: {e}")
         return False
 def block_website(website_url, user_id=None):
     """
@@ -374,10 +374,10 @@ def block_website(website_url, user_id=None):
     # Optionally: clear_chrome_dns_cache()
 
     if success_firewall and success_hosts:
-        print(f"✅ Website {website_url} has been successfully blocked.")
+        print(f"Website {website_url} has been successfully blocked.")
         return True
     else:
-        print(f"❌ Failed to block {website_url}.")
+        print(f"Failed to block {website_url}.")
         return False
 
 
@@ -407,8 +407,8 @@ def unblock_website(website_url, user_id=None):
     # Optionally: clear_chrome_dns_cache()
 
     if success_firewall and success_hosts:
-        print(f"✅ Website {website_url} has been successfully unblocked.")
+        print(f"Website {website_url} has been successfully unblocked.")
         return True
     else:
-        print(f"❌ Failed to unblock {website_url}.")
+        print(f"Failed to unblock {website_url}.")
         return False

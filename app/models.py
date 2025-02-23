@@ -33,9 +33,10 @@ class DefaultCategory(db.Model):
 class DefaultWebsite(db.Model):
     __tablename__ = 'default_websites'
     id = db.Column(db.Integer, primary_key=True)
-    category_id = db.Column(db.Integer, db.ForeignKey('default_categories.id', ondelete="CASCADE"), nullable=False)
-    name = db.Column(db.String(100), nullable=False)
-    url = db.Column(db.String(255), nullable=False, unique=True)
+    category_id = db.Column(db.Integer, db.ForeignKey('default_categories.id'))
+    name = db.Column(db.String(255), nullable=False)
+    # Make sure `unique=False` or remove the unique constraint from the migration
+    url = db.Column(db.String(255), unique=False, nullable=False)
 
 # -------------------------
 # Custom Categories & Websites
