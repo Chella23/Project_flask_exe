@@ -285,3 +285,36 @@ document.getElementById("search-btn").addEventListener("click", function () {
         }
     });
 });
+
+// static/js/script.js
+// On page load, check for token and verify session
+document.addEventListener('DOMContentLoaded', function() {
+    const sessionToken = localStorage.getItem('session_token');
+    if (sessionToken) {
+        fetch('/verify', {
+            headers: { 'X-Session-Token': sessionToken }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'verified') {
+                console.log('Session restored for user:', data.user_id);
+                // Optionally redirect to a protected page
+                // window.location.href = '/blocked_websites';
+            } else {
+                console.log('Session not verified');
+            }
+        })
+        .catch(error => console.error('Error verifying token:', error));
+    }
+});
+
+// Function to set token after sign-in (called from success.html or via JS response)
+function setSessionToken(token) {
+    localStorage.setItem('session_token', token);
+    console.log('Session token set:', token);
+}
+
+
+
+// Example: Call this from your success page or after sign-in response
+// In success.html: <script>setSessionToken('{{ session_token }}');</script>

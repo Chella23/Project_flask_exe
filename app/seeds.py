@@ -1,24 +1,5 @@
-from sqlalchemy import inspect, create_engine
-from sqlalchemy.engine.url import make_url
+from sqlalchemy import inspect
 from .models import db, DefaultCategory, DefaultWebsite
-import sys
-
-def ensure_database_exists(db_url):
-    """
-    Checks if the target database exists, and creates it if not.
-    """
-    try:
-        url = make_url(db_url)
-        database = url.database
-        # Remove the database name from the URL
-        url = url.set(database=None)
-        engine = create_engine(url)
-        with engine.connect() as connection:
-            connection.execute(f"CREATE DATABASE IF NOT EXISTS `{database}`")
-        print(f"✅ Database '{database}' exists or has been created successfully.")
-    except Exception as e:
-        print(f"❌ Error ensuring database exists: {e}")
-        sys.exit(1)
 
 def table_exists(table_name):
     """
@@ -32,7 +13,7 @@ def create_tables():
     Create tables if they do not exist.
     """
     db.create_all()
-    print("✅ All missing tables have been created.")
+    safe_print("All missing tables have been created.")
 
 def init_default_categories():
     """
@@ -40,12 +21,12 @@ def init_default_categories():
     Only runs if no default category is already present.
     """
     if not table_exists("default_categories") or not table_exists("default_websites"):
-        print("⚠️ Default tables are missing. Creating tables first...")
+        safe_print("Default tables are missing. Creating tables first...")
         create_tables()
 
     # Check if default categories already exist
     if DefaultCategory.query.first():
-        print("✅ Default categories already exist. Skipping insertion.")
+        safe_print("Default categories already exist. Skipping insertion.")
         return
 
     default_data = {
@@ -176,10 +157,11 @@ def init_default_categories():
         db.session.add(category)
         db.session.flush()  # Flush to get the new category ID
 
-        # For each website, insert the base URL only if it doesn't already exist.
+        # For each website, add both the base URL and a "www." version (if desired).
         for name, base_url in websites:
-            existing = DefaultWebsite.query.filter_by(url=base_url).first()
-            if not existing:
+            # 1) Insert base_url only if it doesn't exist
+            existing_base = DefaultWebsite.query.filter_by(url=base_url).first()
+            if not existing_base:
                 website1 = DefaultWebsite(
                     category_id=category.id,
                     name=name,
@@ -187,17 +169,25 @@ def init_default_categories():
                 )
                 db.session.add(website1)
 
+            # # 2) Optionally insert "www." version, if it doesn't already start with "www."
+            # if not base_url.startswith("www."):
+            #     www_url = "www." + base_url
+            #     existing_www = DefaultWebsite.query.filter_by(url=www_url).first()
+            #     if not existing_www:
+            #         website2 = DefaultWebsite(
+            #             category_id=category.id,
+            #             name=f"{name} (www)",
+            #             url=www_url
+            #         )
+            #         db.session.add(website2)
+
     db.session.commit()
-    print("Default categories and websites have been initialized.")
+    safe_print("Default categories and websites have been initialized.")
 
 def check_and_initialize():
     """
     Ensures all tables exist and inserts default data if needed.
     """
-    # Ensure the database exists (pass the SQLALCHEMY_DATABASE_URI from your config)
-    from flask import current_app
-    db_url = current_app.config.get("SQLALCHEMY_DATABASE_URI")
-    ensure_database_exists(db_url)
     create_tables()
     init_default_categories()
 

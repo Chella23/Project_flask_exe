@@ -173,3 +173,10 @@ class WebsiteHistory(db.Model):
     website = db.Column(db.String(255), nullable=False)
     action = db.Column(db.String(50), nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    # Define a SessionToken model
+class SessionToken(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(36), unique=True, nullable=False)  # UUID is 36 chars
+    user_id = db.Column(db.Integer, nullable=False)  # Assuming you have a user ID
+    expires_at = db.Column(db.DateTime, nullable=False)

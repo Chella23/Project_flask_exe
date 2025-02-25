@@ -126,12 +126,33 @@
     overflow-y: auto;
     transition: margin-left 0.3s ease;
     border-radius: 12px 0 0 12px;
+    
+}
+/* Ensure Bootstrap Icons use their original colors */
+.bi {
+    color: inherit; /* Inherit the text color or default to original SVG fill */
+    fill: currentColor; /* Use the current text color or default SVG fill for filled icons */
+    stroke: none; /* Remove stroke to avoid black outlines if not desired */
+}
+
+/* Optional: Specific color adjustments for certain icons if needed */
+.bi-people-fill, .bi-play-btn-fill, .bi-cart-fill, .bi-newspaper, .bi-controller, .bi-book-fill, .bi-robot, .bi-currency-dollar, .bi-heart-fill, .bi-check2-square, .bi-facebook, .bi-twitter, .bi-instagram, .bi-camera-fill, .bi-music-note, .bi-chat-left-text-fill, .bi-linkedin, .bi-pin-angle-fill, .bi-question-circle-fill, .bi-images, .bi-youtube, .bi-play-circle-fill, .bi-play-btn, .bi-magic, .bi-tv-fill, .bi-camera-video-fill, .bi-box-seam-fill, .bi-cart-check-fill, .bi-cart-plus-fill, .bi-gift-fill, .bi-bag-fill, .bi-house-fill, .bi-graph-up, .bi-clock-fill, .bi-joystick, .bi-cube-fill, .bi-file-earmark-text-fill, .bi-code-slash, .bi-bank, .bi-capsule-fill, .bi-sticky-fill {
+    color: unset; /* Reset color to allow original SVG fill colors */
+    fill: unset; /* Allow the icon’s default fill color from the SVG */
+    stroke: none; /* Ensure no black stroke overrides original colors */
+}
+
+/* Optional: Add hover effects to maintain interactivity */
+.bi:hover {
+    opacity: 0.8; /* Subtle hover effect to maintain interactivity */
+    transition: opacity 0.3s ease;
 }
 
 .sidebar.hidden + .main-content {
     margin-left: 0;
     border-radius: 0;
 }
+
 
 .topic {
     display: flex;
@@ -143,6 +164,7 @@
     padding: 10px 15px;
     border-radius: 8px;
     color: #333;
+
 }
 
 /* Content styling */
@@ -154,6 +176,7 @@
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     max-width: 800px;
     margin: 0 auto;
+    margin-left: 50px;
 }
 
 #block-website-form {
@@ -411,7 +434,6 @@ a:active {
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(80, 227, 194, 0.4);
 }
-
 /* Default and Custom Categories */
 #default-categories, #custom-categories {
     margin-top: 20px;
@@ -419,48 +441,108 @@ a:active {
     background: rgba(0, 0, 0, 0.05);
     border-radius: 12px;
     display: grid;
+    margin-left: 50px;
     grid-template-columns: repeat(2, 1fr); /* Two columns */
     gap: 1.5rem; /* Spacing between columns */
+    align-items: start; /* Prevents grid items from stretching to match row height */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
 
+/* Category Container */
 .category {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.1); /* Subtle white overlay for contrast */
     border-radius: 8px;
     padding: 1rem;
     transition: all 0.3s ease;
     overflow: hidden;
     position: relative;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    margin-left: 50px;
+}
+
+h2{
+    margin-left: 50px;
+}
+p{
+    margin-left: 50px;
 }
 
 /* Category Header */
 .category h3 {
     cursor: pointer;
-    display: grid;
-    grid-template-columns: 1fr auto; /* Title & Expand Icon */
+    display: flex;
     align-items: center;
+    justify-content: space-between; /* Distributes space evenly, pushing icons to the right */
     gap: 10px;
     color: #333;
     font-size: 1.2rem;
+    font-weight: 600;
     margin: 0;
     padding: 0.8rem 1rem;
-    background: rgba(0, 0, 0, 0.03);
-    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.2); /* Lighter background for contrast */
+    border-radius: 6px 6px 0 0; /* Rounded top corners only */
     position: relative;
+    transition: background 0.3s ease;
 }
 
-/* Toggle Icon */
-.category h3::after {
-    content: '+';
+.category h3:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Category Header Icons (Expand/Collapse and Favorite) */
+.category h3 .toggle-icon {
     font-size: 1.4rem;
     font-weight: bold;
-    justify-self: end;
+    color: #50E3C2; /* Vibrant green for expand/collapse */
+    transition: transform 0.3s ease, color 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Tighter spacing for professional look */
+    margin-left: auto; /* Pushes icons to the right */
+    
 }
 
-/* Expanded Category */
-.category.expanded h3::after {
+.category.expanded h3 .toggle-icon {
     content: '−';
+    color: #FF6B6B; /* Red for collapse */
+    transform: rotate(180deg);
 }
 
+.category h3 .fav-icon {
+    font-size: 1.6rem;
+    cursor: pointer;
+    transition: color 0.3s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; /* Fixed width for consistency */
+    height: 24px; /* Fixed height for consistency */
+}
+
+/* Default: Not Favorited (Category Header) */
+.category h3 .fav-icon.unfavorited {
+    color: #bbb; /* Subtle gray */
+}
+
+/* Favorited (Category Header) */
+.category h3 .fav-icon.favorited {
+    color: #FF6B6B; /* Vibrant red */
+    transform: scale(1.1); /* Slight pop effect */
+}
+
+/* Hover Effect (Category Header Favorite) */
+.category h3 .fav-icon:hover {
+    color: #FF4F4F; /* Slightly deeper red */
+    transform: scale(1.2);
+}
+
+/* Active Click Effect (Category Header Favorite) */
+.category h3 .fav-icon:active {
+    transform: scale(1);
+    opacity: 0.8;
+}
+
+/* Category List */
 .category ul {
     list-style: none;
     margin: 0;
@@ -470,9 +552,11 @@ a:active {
     transition: max-height 0.3s ease, padding 0.3s ease;
 }
 
+/* Expanded State */
 .category.expanded ul {
-    max-height: 100%; /* Adjust based on content */
+    max-height: none; /* Allows the list to expand to its natural height */
     padding: 0.8rem 0;
+    background: rgba(255, 255, 255, 0.1); /* Subtle background for list */
 }
 
 /* Styling for the category website list */
@@ -481,18 +565,17 @@ a:active {
     align-items: center;
     justify-content: space-between;
     padding: 10px 12px;
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* Lighter border for professionalism */
     transition: background 0.2s ease-in-out;
 }
 
-/* Fix last URL visibility issue */
 .category ul li:last-child {
     border-bottom: none; /* Remove border from the last item */
     padding-bottom: 12px;
 }
 
 .category ul li:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(255, 255, 255, 0.2); /* Subtle hover effect */
 }
 
 /* Aligning website name and icons properly */
@@ -501,43 +584,76 @@ a:active {
     align-items: center;
     gap: 12px;
     flex-grow: 1;
+    max-width: 70%; /* Prevent overflow */
+    color: #333;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
-/* Aligning fav-icon and add-icon */
+/* Icons Container for Plus and Favorite Icons */
 .category ul li .icons {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px; /* Tighter spacing for professional look */
+    margin-left: auto; /* Pushes icons to the right */
 }
 
-/* Favorite Icon */
-.fav-icon {
+/* Favorite Icon (List Item) */
+.category ul li .fav-icon {
     font-size: 1.6rem;
     cursor: pointer;
     transition: color 0.3s ease, transform 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; /* Fixed width for consistency */
+    height: 24px; /* Fixed height for consistency */
 }
 
-/* Default: Not Favorited */
-.fav-icon.unfavorited {
+/* Default: Not Favorited (List Item) */
+.category ul li .fav-icon.unfavorited {
     color: #bbb; /* Subtle gray */
 }
 
-/* Favorited */
-.fav-icon.favorited {
+/* Favorited (List Item) */
+.category ul li .fav-icon.favorited {
     color: #FF6B6B; /* Vibrant red */
     transform: scale(1.1); /* Slight pop effect */
 }
 
-/* Hover Effect */
-.fav-icon:hover {
+/* Hover Effect (List Item Favorite) */
+.category ul li .fav-icon:hover {
     color: #FF4F4F; /* Slightly deeper red */
     transform: scale(1.2);
 }
 
-/* Active Click Effect */
-.fav-icon:active {
+/* Active Click Effect (List Item Favorite) */
+.category ul li .fav-icon:active {
     transform: scale(1);
     opacity: 0.8;
+}
+
+/* Plus Icon for Adding Websites (List Item) */
+.category ul li .add-icon {
+    cursor: pointer;
+    font-size: 1.2rem; /* Slightly smaller for better fit */
+    padding: 5px;
+    border-radius: 50%;
+    color: #FF4F4F;
+    transition: all 0.3s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; /* Fixed width for consistency */
+    height: 24px; /* Fixed height for consistency */
+    background: rgba(255, 107, 107, 0.1); /* Subtle background for depth */
+}
+
+.category ul li .add-icon:hover {
+    background: #FF4F4F;
+    color: #fff;
+    transform: scale(1.1);
+    border-color: #fff; /* White border on hover for contrast */
 }
 
 /* Responsive Design */
@@ -545,50 +661,38 @@ a:active {
     #default-categories, #custom-categories {
         grid-template-columns: 1fr; /* Single column layout */
     }
-}
 
-
-
-
-/* Plus Icon for Adding Websites */
-.add-icon {
-    cursor: pointer;
-
-    padding: 5px;
-    border: 1px solid #FF6B6B;
-    border-radius: 50%;
-    font-weight: bold;
-    color: #FF6B6B;
-    transition: all 0.3s ease-in-out;
-}
-
-.add-icon:hover {
-    background-color: #FF6B6B;
-    color: #fff;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-    #default-categories,
-    #custom-categories {
-        padding: 10px;
+    .category h3 .fav-icon, .category ul li .fav-icon, .category ul li .add-icon {
+        font-size: 1.4rem; /* Smaller icons on mobile */
+        width: 20px;
+        height: 20px;
     }
-    
-    .category h3 {
-        font-size: 1.1rem;
-    }
-    
-    .category li {
+
+    .category ul li .website-info {
         font-size: 0.9rem;
     }
 }
 
+@media (max-width: 768px) {
+    #default-categories, #custom-categories {
+        padding: 10px;
+    }
 
+    .category h3 {
+        font-size: 1.1rem;
+    }
+
+    .category ul li {
+        font-size: 0.9rem;
+        padding: 8px 10px;
+    }
+}
 /* Blocked Websites Container */
 #blocked-websites {
     margin-top: 20px;
     background: rgba(0, 0, 0, 0.05);
     padding: 15px;
+    margin-left: 50px;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
@@ -875,11 +979,16 @@ input.form-control:focus {
     background: #fff;
     color: #333;
     padding: 20px;
+    align-items: center;
+    justify-content: center;
+    margin-left: 50px;
     border-radius: 12px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
     max-width: 600px;
     margin: 20px auto;
+
 }
+
 
 #add-custom-category h2 {
     text-align: center;
@@ -939,12 +1048,25 @@ input.form-control:focus {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
- /* Additional styling for collapsible history */
-    #history-header {
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-    }
-    #history-header i {
-      margin-left: 8px;
-    }
+/* Additional styling for collapsible history */
+#history-header {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: #333;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 15px;
+    transition: color 0.3s ease;
+}
+
+#history-header:hover {
+    color: #FF6B6B;
+}
+
+#history-header i {
+    margin-left: 8px;
+    transition: transform 0.3s ease;
+}

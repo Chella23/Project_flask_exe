@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetaler2@11"></script>
   <script>
     document.addEventListener("DOMContentLoaded", function () {
       // Flash message handling
@@ -193,73 +193,80 @@ function performAction(action, password = null) {
           </div>
         </section>
 
-
-      <!-- Favorite Default Categories Section -->
-      <section id="favorite-default-categories">
-        <h2>Favorite Default Categories</h2>
-        {% if favorite_default_categories %}
-          {% for category in favorite_default_categories %}
-            <div class="category">
-              <!-- Clicking on the h3 text toggles expansion -->
-              <h3 onclick="toggleCategoryExpansion(this)">
-                {{ category.title }}
-                <!-- Category-level toggle icon; stops propagation so it doesn't collapse -->
-                <span class="fav-icon" onclick="event.stopPropagation(); toggleCategoryFavorite(event, '{{ category.id }}', 'default')">
+<br>
+    <!-- Favorite Default Categories Section -->
+    <section id="favorite-default-categories">
+      <h2>Favorite Default Categories</h2>
+      {% if favorite_default_categories %}
+      {% for category in favorite_default_categories %}
+      <div class="category">
+          <h3>
+            <i class="{{ category_icons[category.title] }}"></i> {{ category.title }}
+              <span class="toggle-icon">+</span>
+              <span class="fav-icon {{ 'favorited' if category.id in user_favorites else 'unfavorited' }}" 
+                  onclick="event.stopPropagation(); toggleCategoryFavorite(event, '{{ category.id }}', 'default')">
                   {{ '❤️' if category.id in user_favorites else '♡' }}
-                </span>
-              </h3>
-              <ul>
-                {% for website in category.websites %}
-                  {% if website.url in favorite_websites.get(category.title, []) %}
-                    <li>
-                      {{ website.name }}
+              </span>
+          </h3>
+          <ul>
+              {% for website in category.websites %}
+              {% if website.url in favorite_websites.get(category.title, []) %}
+              <li>
+                <div class="website-info"><i class="{{ website_icons.get(website.url, 'bi bi-globe') }}"></i> {{ website.name }}</div>
+                  <div class="icons">
                       <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
-                      <span class="fav-icon" onclick="event.stopPropagation(); toggleWebsiteFavorite(event, '{{ category.id }}', 'default', '{{ website.url }}')">
-                        {{ '❤️' if website.url in favorite_websites.get(category.title, []) else '♡' }}
+                      <span class="fav-icon {{ 'favorited' if website.url in favorite_websites.get(category.title, []) else 'unfavorited' }}" 
+                          onclick="event.stopPropagation(); toggleWebsiteFavorite(event, '{{ category.id }}', 'default', '{{ website.url }}')">
+                          {{ '❤️' if website.url in favorite_websites.get(category.title, []) else '♡' }}
                       </span>
-                    </li>
-                  {% endif %}
-                {% endfor %}
-              </ul>
-            </div>
-          {% endfor %}
-        {% else %}
-          <p>No favorite default categories added yet.</p>
-        {% endif %}
-      </section>
-
-      <!-- Favorite Custom Categories Section -->
-      <section id="favorite-custom-categories">
-        <h2>Favorite Custom Categories</h2>
-        {% if favorite_custom_categories %}
-          {% for category in favorite_custom_categories %}
-            <div class="category">
-              <h3 onclick="toggleCategoryExpansion(this)">
-                {{ category.title }}
-                <span class="fav-icon" onclick="event.stopPropagation(); toggleCategoryFavorite(event, '{{ category.id }}', 'custom')">
+                  </div>
+              </li>
+              {% endif %}
+              {% endfor %}
+          </ul>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p>No favorite default categories added yet.</p>
+      {% endif %}
+  </section>
+<br>
+  <!-- Favorite Custom Categories Section -->
+  <section id="favorite-custom-categories">
+      <h2>Favorite Custom Categories</h2>
+      {% if favorite_custom_categories %}
+      {% for category in favorite_custom_categories %}
+      <div class="category">
+          <h3>
+            <i class="{{ category_icons[category.title] }}"></i> {{ category.title }}
+              <span class="toggle-icon">+</span>
+              <span class="fav-icon {{ 'favorited' if category.id in user_favorites else 'unfavorited' }}" 
+                  onclick="event.stopPropagation(); toggleCategoryFavorite(event, '{{ category.id }}', 'custom')">
                   {{ '❤️' if category.id in user_favorites else '♡' }}
-                </span>
-              </h3>
-              <ul>
-                {% for website in category.websites %}
-                  {% if website.url in favorite_websites.get(category.title, []) %}
-                    <li>
-                      {{ website.name }}
+              </span>
+          </h3>
+          <ul>
+              {% for website in category.websites %}
+              {% if website.url in favorite_websites.get(category.title, []) %}
+              <li>
+                <div class="website-info"><i class="{{ website_icons.get(website.url, 'bi bi-globe') }}"></i> {{ website.name }}</div>
+                  <div class="icons">
                       <span class="add-icon" onclick="addToTextarea('{{ website.url }}')">➕</span>
-                      <span class="fav-icon" onclick="event.stopPropagation(); toggleWebsiteFavorite(event, '{{ category.id }}', 'custom', '{{ website.url }}')">
-                        {{ '❤️' if website.url in favorite_websites.get(category.title, []) else '♡' }}
+                      <span class="fav-icon {{ 'favorited' if website.url in favorite_websites.get(category.title, []) else 'unfavorited' }}" 
+                          onclick="event.stopPropagation(); toggleWebsiteFavorite(event, '{{ category.id }}', 'custom', '{{ website.url }}')">
+                          {{ '❤️' if website.url in favorite_websites.get(category.title, []) else '♡' }}
                       </span>
-                    </li>
-                  {% endif %}
-                {% endfor %}
-              </ul>
-            </div>
-          {% endfor %}
-        {% else %}
-          <p>No favorite custom categories added yet.</p>
-        {% endif %}
-      </section>
-      
+                  </div>
+              </li>
+              {% endif %}
+              {% endfor %}
+          </ul>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p>No favorite custom categories added yet.</p>
+      {% endif %}
+  </section>
    
       
     </div>

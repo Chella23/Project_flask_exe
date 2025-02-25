@@ -18,17 +18,23 @@ from .constants import Constants, Methods
 from bcrypt import hashpw, gensalt, checkpw
 import random
 import time
-from .models import Mfa, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask
+from .models import Mfa, User, DefaultCategory, DefaultWebsite, CustomCategory, CustomWebsite, Favorite,  PasswordProtection, ScheduledTask, SessionToken
 from sqlalchemy.orm import joinedload
 from dateutil import parser
+import uuid
+from hashlib import sha256  # Alternative if checkpw/hashpw isn't from bcrypt
+from datetime import datetime, timedelta
 
 
 
 auth_bp = Blueprint("auth", __name__)
-
 @auth_bp.route("/")
 def index():
-    
+    if "user_id" in session:
+        user = User.query.get(session["user_id"])
+        if user:
+            session.permanent = True  # Set session lifetime to 24 hours
+            return redirect(url_for("auth.success"))
     return render_template(Constants.INDEX_PAGE)
 
 @auth_bp.route("/home")
@@ -36,6 +42,7 @@ def home():
     if "user_id" in session:
         user = User.query.get(session["user_id"])
         if user:
+            session.permanent = True
             return redirect(url_for("auth.success"))
     return render_template(Constants.HOME_PAGE)
 
@@ -51,8 +58,18 @@ def signin():
     if user and checkpw(password.encode("utf-8"), user.password.encode("utf-8")):
         session["user_id"] = user.id
         session["user_name"] = user.name
+        session.permanent = True  # Set session lifetime to 24 hours
+
+        # Generate and store a session token
+        token = str(uuid.uuid4())
+        expires_at = datetime.utcnow() + timedelta(hours=24)
+        session_token = SessionToken(token=token, user_id=user.id, expires_at=expires_at)  # Fix: user.id, not user['id']
+        db.session.add(session_token)
+        db.session.commit()
+
         flash(Constants.SIGNIN_SUCCESS, "success")
-        return redirect(url_for("auth.success"))
+        # Pass token to success template for localStorage
+        return render_template(Constants.HOME_PAGE, name=user.name, session_token=token)
 
     flash(Constants.INVALID_EMAIL_PASSWORD, "error")
     return redirect(url_for("auth.signin"))
@@ -73,7 +90,8 @@ def signup():
             flash(Constants.EMAIL_ALREADY_REGISTERED, "error")
             return redirect(url_for("auth.signup"))
 
-        hashed_password = hashpw(password.encode("utf-8"), gensalt()).decode("utf-8")
+        # Use bcrypt’s hashpw (assumed from your original code)
+        hashed_password = hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         new_user = User(name=name, email=email, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
@@ -90,8 +108,26 @@ def success():
         return render_template(Constants.HOME_PAGE, name=user_name)
     return redirect(url_for("auth.signin"))
 
+@auth_bp.route("/verify", methods=[Methods.GET])
+def verify():
+    token = request.headers.get('X-Session-Token')
+    if token:
+        session_token = SessionToken.query.filter_by(token=token).first()
+        if session_token and session_token.expires_at > datetime.utcnow():
+            session['user_id'] = session_token.user_id
+            session['user_name'] = User.query.get(session_token.user_id).name
+            session.permanent = True
+            return {"status": "verified", "user_id": session_token.user_id}
+    return {"status": "not_verified"}, 401
+
 @auth_bp.route("/signout")
 def signout():
+    if "user_id" in session:
+        # Invalidate session token if it exists
+        token = SessionToken.query.filter_by(user_id=session["user_id"]).order_by(SessionToken.expires_at.desc()).first()
+        if token:
+            db.session.delete(token)
+            db.session.commit()
     session.clear()
     flash(Constants.SIGNOUT_SUCCESS, "success")
     return redirect(url_for("auth.home"))
@@ -286,6 +322,8 @@ def categories():
     return render_template("categories.html", 
                            default_categories=default_categories,
                            user_custom_categories=custom_categories,  # ✅ Correct variable name
+                           category_icons=category_icons, 
+                           website_icons=website_icons,
                            favorite_urls=favorite_urls,
                            user_favorites=[fav.default_category_id or fav.custom_category_id for fav in user_favorites])
 
@@ -446,6 +484,8 @@ def favourites():
                            favorite_default_categories=favorite_default_categories,
                            favorite_custom_categories=favorite_custom_categories,
                            favorite_websites=favorite_websites,
+                           category_icons=category_icons, 
+                           website_icons=website_icons, 
                            user_favorites=user_fav_ids)
 
 @auth_bp.route('/toggle_website_favorite/<int:category_id>/', defaults={'category_type': 'default'}, methods=['POST'])
@@ -858,3 +898,119 @@ def get_user_email():
 @auth_bp.route("/MFA", methods=["GET"])
 def MFA():
     return render_template("mfa.html")
+
+
+
+# In your Flask route or seeds.py
+category_icons = {
+    "Social Media": "bi bi-people-fill",
+    "Streaming": "bi bi-play-btn-fill",
+    "Shopping": "bi bi-cart-fill",
+    "News": "bi bi-newspaper",
+    "Gaming": "bi bi-controller",
+    "Education": "bi bi-book-fill",
+    "AI Tools": "bi bi-robot",
+    "Finance": "bi bi-currency-dollar",
+    "Health": "bi bi-heart-fill",
+    "Productivity": "bi bi-check2-square"
+}
+
+website_icons = {
+    "facebook.com": "bi bi-facebook",
+    "twitter.com": "bi bi-twitter",
+    "instagram.com": "bi bi-instagram",
+    "snapchat.com": "bi bi-camera-fill",
+    "tiktok.com": "bi bi-music-note",
+    "reddit.com": "bi bi-chat-left-text-fill",
+    "linkedin.com": "bi bi-linkedin",
+    "pinterest.com": "bi bi-pin-angle-fill",
+    "quora.com": "bi bi-question-circle-fill",
+    "tumblr.com": "bi bi-images",
+    "youtube.com": "bi bi-youtube",
+    "netflix.com": "bi bi-play-circle-fill",
+    "hulu.com": "bi bi-play-btn",
+    "disneyplus.com": "bi bi-magic",
+    "primevideo.com": "bi bi-play-circle",
+    "hbomax.com": "bi bi-tv-fill",
+    "twitch.tv": "bi bi-camera-video-fill",
+    "crunchyroll.com": "bi bi-play-btn",
+    "hbo.com": "bi bi-tv-fill",
+    "vimeo.com": "bi bi-play-circle",
+    "amazon.com": "bi bi-box-seam-fill",
+    "ebay.com": "bi bi-cart-check-fill",
+    "walmart.com": "bi bi-cart-fill",
+    "aliexpress.com": "bi bi-cart-plus-fill",
+    "etsy.com": "bi bi-gift-fill",
+    "target.com": "bi bi-cart-fill",
+    "flipkart.com": "bi bi-cart-fill",
+    "bestbuy.com": "bi bi-cart-fill",
+    "zara.com": "bi bi-bag-fill",
+    "ikea.com": "bi bi-house-fill",
+    "cnn.com": "bi bi-newspaper",
+    "bbc.com": "bi bi-newspaper",
+    "nytimes.com": "bi bi-newspaper",
+    "foxnews.com": "bi bi-newspaper",
+    "theguardian.com": "bi bi-newspaper",
+    "washingtonpost.com": "bi bi-newspaper",
+    "reuters.com": "bi bi-newspaper",
+    "bloomberg.com": "bi bi-graph-up",
+    "forbes.com": "bi bi-graph-up",
+    "time.com": "bi bi-clock-fill",
+    "steampowered.com": "bi bi-controller",
+    "epicgames.com": "bi bi-controller",
+    "roblox.com": "bi bi-joystick",
+    "minecraft.net": "bi bi-cube-fill",
+    "playstation.com": "bi bi-controller",
+    "xbox.com": "bi bi-controller",
+    "nintendo.com": "bi bi-controller",
+    "rockstargames.com": "bi bi-controller",
+    "ea.com": "bi bi-controller",
+    "khanacademy.org": "bi bi-book-fill",
+    "coursera.org": "bi bi-book-fill",
+    "udemy.com": "bi bi-book-fill",
+    "edx.org": "bi bi-book-fill",
+    "academia.edu": "bi bi-file-earmark-text-fill",
+    "duolingo.com": "bi bi-chat-left-text-fill",
+    "mit.edu": "bi bi-book-fill",
+    "stanford.edu": "bi bi-book-fill",
+    "harvard.edu": "bi bi-book-fill",
+    "codecademy.com": "bi bi-code-slash",
+    "chat.openai.com": "bi bi-robot",
+    "bard.google.com": "bi bi-robot",
+    "huggingface.co": "bi bi-robot",
+    "runwayml.com": "bi bi-robot",
+    "midjourney.com": "bi bi-robot",
+    "notion.so/ai": "bi bi-robot",
+    "github.com/copilot": "bi bi-code-slash",
+    "deeplearning.ai": "bi bi-robot",
+    "elevenlabs.io": "bi bi-music-note",
+    "stability.ai": "bi bi-robot",
+    "paypal.com": "bi bi-currency-dollar",
+    "stripe.com": "bi bi-credit-card-fill",
+    "bankofamerica.com": "bi bi-bank",
+    "wellsfargo.com": "bi bi-bank",
+    "chase.com": "bi bi-bank",
+    "hsbc.com": "bi bi-bank",
+    "goldmansachs.com": "bi bi-graph-up",
+    "nasdaq.com": "bi bi-graph-up",
+    "webmd.com": "bi bi-heart-fill",
+    "mayoclinic.org": "bi bi-heart-fill",
+    "healthline.com": "bi bi-heart-fill",
+    "nih.gov": "bi bi-heart-fill",
+    "who.int": "bi bi-heart-fill",
+    "clevelandclinic.org": "bi bi-heart-fill",
+    "cdc.gov": "bi bi-heart-fill",
+    "medscape.com": "bi bi-heart-fill",
+    "medlineplus.gov": "bi bi-heart-fill",
+    "drugs.com": "bi bi-capsule-fill",
+    "notion.so": "bi bi-check2-square",
+    "trello.com": "bi bi-check2-square",
+    "asana.com": "bi bi-check2-square",
+    "monday.com": "bi bi-check2-square",
+    "slack.com": "bi bi-chat-left-text-fill",
+    "zoom.us": "bi bi-camera-video-fill",
+    "evernote.com": "bi bi-file-earmark-text-fill",
+    "googlekeep.com": "bi bi-sticky-fill",
+    "todoist.com": "bi bi-check2-square",
+    "clickup.com": "bi bi-check2-square"
+}

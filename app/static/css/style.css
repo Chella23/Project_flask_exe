@@ -7,7 +7,7 @@
 
 body {
     font-family: 'Roboto', Arial, sans-serif;
-    background: linear-gradient(135deg, #1e1e2f, #2a2a40); /* Dark theme gradient remains */
+    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2); /* Dark theme gradient remains */
     color: #333;
     display: flex;
     justify-content: center;
@@ -29,6 +29,7 @@ body {
     border: 1px solid rgba(0, 0, 0, 0.3);
     transition: transform 0.3s, box-shadow 0.3s;
     margin: auto;
+    
 }
 
 .container:hover {
@@ -163,8 +164,8 @@ a {
     text-decoration: none;
     padding: 12px 20px;
     margin: 15px 0;
-    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
-    color: #fff;
+ 
+    color:  #50a8e3;
     border: none;
     border-radius: 12px;
     font-size: 16px;
@@ -172,22 +173,20 @@ a {
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+   
 }
 
 a:hover {
-    background: linear-gradient(135deg, #50a8e3, #4A90E2, #7b1cf8);
+   
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(80, 227, 194, 0.4);
 }
-
 a:active {
     transform: translateY(0);
 }
 
 a:visited {
-    color: #fff;
-    background: linear-gradient(135deg, #6bc4ff, #6272ff, #50E3C2);
+    color: #50a8e3;
+   
 }
 
 /* Add Subtle Animation */
